@@ -1,0 +1,26 @@
+{
+  "name": "restaurant-platform",
+  "version": "1.0.0",
+  "description": "Multi-tenant restaurant platform",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "init-db": "node server/init-db.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.7.0",
+    "dotenv": "^17.4.2",
+    "express": "^4.21.0",
+    "express-rate-limit": "^8.5.2",
+    "express-session": "^1.18.1",
+    "helmet": "^8.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.2.0",
+    "nodemailer": "^9.0.3",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^8.0.1"
+  }
+}

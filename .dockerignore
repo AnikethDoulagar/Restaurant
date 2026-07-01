@@ -1,0 +1,9 @@
+node_modules
+.git
+.gitignore
+*.md
+npm-debug.log*
+.env
+database/platform.db
+.DS_Store
+.dockerignore

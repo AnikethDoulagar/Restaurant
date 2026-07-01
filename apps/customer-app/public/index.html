@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Welcome</title>
+<style>
+  :root {
+    --orange: #e67e22;
+    --orange-dark: #d35400;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d0d0d; color: #f5f5f5; -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+
+  .page-bg { position: fixed; inset: 0; z-index: 0; }
+  .page-bg img { width: 100%; height: 100%; object-fit: cover; }
+  .page-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.85) 100%); }
+
+  .app { max-width: 576px; margin: 0 auto; min-height: 100vh; position: relative; z-index: 1; }
+
+  .hero { position: relative; color: #fff; padding: 3rem 1.5rem 4rem; text-align: center; overflow: hidden; }
+  .hero .table-badge { display: inline-flex; align-items: center; gap: 0.35rem; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 0.35rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.08); }
+  .hero h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 0.4rem; }
+  .hero p { font-size: 0.95rem; opacity: 0.7; }
+  .hero .view-full-menu { display: inline-block; margin-top: 1.25rem; background: var(--orange); color: #fff; padding: 0.75rem 2rem; border-radius: 12px; font-size: 0.95rem; font-weight: 600; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s; }
+  .hero .view-full-menu:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(230,126,34,0.4); }
+
+  .container { padding: 0 1.25rem 2rem; }
+
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding: 0 0.25rem; }
+  .section-header h2 { font-size: 1.1rem; font-weight: 700; color: #fff; }
+  .section-header a { font-size: 0.85rem; color: var(--orange); font-weight: 500; text-decoration: none; }
+
+  .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.5rem; }
+  .cat-card { background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: var(--radius); padding: 1.25rem 1rem; text-align: center; text-decoration: none; color: #f5f5f5; transition: transform 0.2s, background 0.2s; border: 1px solid rgba(255,255,255,0.06); }
+  .cat-card:hover { transform: translateY(-3px); background: rgba(255,255,255,0.12); }
+  .cat-icon-wrap { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.6rem; font-size: 1.4rem; background: rgba(255,255,255,0.1); }
+  .cat-card .name { font-weight: 600; font-size: 0.9rem; }
+  .cat-card .count { font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-top: 0.15rem; }
+
+  .full-menu-cta { display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; padding: 1rem; background: var(--orange); color: #fff; border: none; border-radius: 14px; font-size: 1.05rem; font-weight: 600; text-decoration: none; cursor: pointer; transition: background 0.2s, transform 0.15s; }
+  .full-menu-cta:hover { background: var(--orange-dark); transform: translateY(-1px); }
+  .full-menu-cta:active { transform: scale(0.98); }
+
+  .loading-state { text-align: center; padding: 3rem 1rem; color: rgba(255,255,255,0.5); }
+  .loading-spinner { display: inline-block; width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.15); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.7s linear infinite; margin-bottom: 0.75rem; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-state { text-align: center; padding: 3rem 1rem; color: #e74c3c; }
+
+  @media (max-width: 400px) {
+    .hero { padding: 2.5rem 1.25rem 3rem; }
+    .hero h1 { font-size: 1.6rem; }
+    .container { padding: 0 1rem 1.5rem; }
+    .cat-grid { gap: 0.6rem; }
+    .cat-card { padding: 1rem 0.75rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page-bg"><img src="https://i.pinimg.com/originals/59/eb/14/59eb1433a1654564101ab10e53de0126.jpg" alt=""></div>
+<div class="app">
+  <div class="hero">
+    <div id="table-badge" class="table-badge" style="display:none">&#128274; Table <span id="table-number"></span></div>
+    <h1 id="restaurant-name">Loading...</h1>
+    <p id="tagline">Scan. Browse. Order.</p>
+    <a class="view-full-menu" id="full-menu-hero-btn" href="#">View Full Menu &rarr;</a>
+  </div>
+
+  <div class="container">
+    <div id="content">
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <div>Loading menu...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var urlParams = new URLSearchParams(location.search);
+var restaurantId = urlParams.get('restaurant') || 'demo-001';
+var tableNumber = urlParams.get('table') || null;
+
+async function load() {
+  try {
+    var res = await fetch('/api/menu/public/' + restaurantId);
+    if (!res.ok) throw new Error('Restaurant not found');
+    var data = await res.json();
+
+    var nameEl = document.getElementById('restaurant-name');
+    if (data.restaurant.name_image_url) {
+      nameEl.innerHTML = '<img src="' + data.restaurant.name_image_url + '" alt="' + data.restaurant.name + '" style="max-width:100%;max-height:80px;display:block;margin:0 auto">';
+    } else {
+      nameEl.textContent = data.restaurant.name;
+    }
+
+    if (tableNumber) {
+      document.getElementById('table-number').textContent = tableNumber;
+      document.getElementById('table-badge').style.display = 'inline-flex';
+    }
+
+    var items = data.items;
+    var categories = {};
+    for (var i = 0; i < items.length; i++) {
+      var cat = items[i].category;
+      if (!categories[cat]) categories[cat] = [];
+      categories[cat].push(items[i]);
+    }
+
+    var catEntries = Object.entries(categories);
+    var baseUrl = '/customer/menu.html?restaurant=' + restaurantId + (tableNumber ? '&table=' + tableNumber : '');
+
+    document.getElementById('full-menu-hero-btn').href = baseUrl;
+
+    var html = '';
+    if (catEntries.length > 0) {
+      html += '<div class="section-header"><h2>Our Menu</h2><a href="' + baseUrl + '">See All</a></div>';
+      html += '<div class="cat-grid">';
+      for (var j = 0; j < catEntries.length; j++) {
+        var cat = catEntries[j][0];
+        var catItems = catEntries[j][1];
+        var icon = '';
+        switch (cat) {
+          case 'Soups and Salads': icon = '&#129367;'; break;
+          case 'Appetizers': icon = '&#127858;'; break;
+          case 'Turkish Grills & Indian Platters': icon = '&#127830;'; break;
+          case 'Dim Sums and Sushi': icon = '&#127843;'; break;
+          case 'Pizzas and Pastas': icon = '&#127829;'; break;
+          case 'Asian Cuisine': icon = '&#127836;'; break;
+          case 'Continental Cuisine': icon = '&#127860;'; break;
+          case 'Indian Cuisine': icon = '&#127834;'; break;
+          case 'Desserts': icon = '&#127874;'; break;
+          case 'Liquor': icon = '&#127866;'; break;
+          case 'Cocktails': icon = '&#127864;'; break;
+          case 'Non-Alcoholic Drinks': icon = '&#129473;'; break;
+          default: icon = '&#127858;'; break;
+        }
+        var catUrl = baseUrl + '&category=' + encodeURIComponent(cat);
+        html += '<a href="' + catUrl + '" class="cat-card">';
+        html += '<div class="cat-icon-wrap">' + icon + '</div>';
+        html += '<div class="name">' + cat + '</div>';
+        html += '<div class="count">' + catItems.length + ' item' + (catItems.length > 1 ? 's' : '') + '</div>';
+        html += '</a>';
+      }
+      html += '</div>';
+      html += '<a href="' + baseUrl + '" class="full-menu-cta">View Full Menu &rarr;</a>';
+    } else {
+      html = '<div class="error-state">No menu items available</div>';
+    }
+
+    document.getElementById('content').innerHTML = html;
+  } catch (e) {
+    document.getElementById('content').innerHTML = '<div class="error-state">' + e.message + '</div>';
+    document.getElementById('restaurant-name').textContent = 'Unavailable';
+  }
+}
+
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+services:
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: restaurant-api
+    ports:
+      - "${API_PORT:-3000}:3000"
+    environment:
+      - DB_PATH=/data/platform.db
+      - PORT=3000
+      - NODE_ENV=production
+      - ADMIN_CODE=${ADMIN_CODE:-13082008}
+      - ADMIN_SECRET_PATH=${ADMIN_SECRET_PATH:-portal}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-change-this-to-a-random-secret-in-production}
+      - BREVO_API_KEY=${BREVO_API_KEY:-}
+      - BREVO_SMTP_KEY=${BREVO_SMTP_KEY:-}
+      - BREVO_SMTP_USER=${BREVO_SMTP_USER:-}
+    volumes:
+      - restaurant_data:/data
+      - restaurant_uploads:/app/public/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+  admin-app:
+    build:
+      context: ./apps/admin-app
+      dockerfile: Dockerfile
+    container_name: restaurant-admin
+    ports:
+      - "${ADMIN_PORT:-3001}:3001"
+    environment:
+      - PORT=3001
+      - API_HOST=api
+      - API_PORT=3000
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  owner-app:
+    build:
+      context: ./apps/owner-app
+      dockerfile: Dockerfile
+    container_name: restaurant-owner
+    ports:
+      - "${OWNER_PORT:-3002}:3002"
+    environment:
+      - PORT=3002
+      - API_HOST=api
+      - API_PORT=3000
+      - CUSTOMER_HOST=customer-app
+      - CUSTOMER_PORT=3003
+      - ADMIN_HOST=admin-app
+      - ADMIN_PORT=3001
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  customer-app:
+    build:
+      context: ./apps/customer-app
+      dockerfile: Dockerfile
+    container_name: restaurant-customer
+    ports:
+      - "${CUSTOMER_PORT:-3003}:3003"
+    environment:
+      - PORT=3003
+      - API_HOST=api
+      - API_PORT=3000
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  restaurant_data:
+    name: restaurant_platform_data
+  restaurant_uploads:
+    name: restaurant_platform_uploads

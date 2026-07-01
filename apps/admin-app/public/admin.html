@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Super Admin Dashboard</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root{--bg:#000;--card-bg:#111;--text:#e0e0e0;--border:#222;--input-bg:#000;--muted:#666;--accent:#667eea}
+[data-theme="light"]{--bg:#f0f2f5;--card-bg:#fff;--text:#333;--border:#ddd;--input-bg:#fff;--muted:#888;--accent:#667eea}
+[data-theme="light"] .login-page{background:var(--bg)}
+[data-theme="light"] .login-card{background:var(--card-bg);border-color:var(--border)}
+[data-theme="light"] .login-card input{background:var(--input-bg);border-color:var(--border);color:var(--text)}
+[data-theme="light"] .sidebar{background:var(--card-bg);border-color:var(--border)}
+[data-theme="light"] .sidebar nav a{color:var(--muted)}
+[data-theme="light"] .sidebar nav a:hover,[data-theme="light"] .sidebar nav a.active{background:#f5f5f5;color:var(--text)}
+[data-theme="light"] .card{background:var(--card-bg);border-color:var(--border)}
+[data-theme="light"] th{color:var(--muted)}
+[data-theme="light"] td{color:var(--text)}
+[data-theme="light"] th, [data-theme="light"] td{border-color:var(--border)}
+[data-theme="light"] .modal-content{background:var(--card-bg);border-color:var(--border)}
+[data-theme="light"] .modal-content input,.modal-content select{background:var(--input-bg);border-color:var(--border);color:var(--text)}
+[data-theme="light"] .stat-item{background:var(--input-bg);border-color:var(--border)}
+[data-theme="light"] .toast{background:#27ae60}
+[data-theme="light"] .btn-secondary{background:#e0e0e0;color:#333}
+[data-theme="light"] .hamburger{background:var(--card-bg);color:var(--text);border-color:var(--border)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;transition:background .3s,color .3s}
+.login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg)}
+.login-card{background:var(--card-bg);padding:2.5rem;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.6);width:360px;max-width:90vw;border:1px solid var(--border)}
+.login-card h1{text-align:center;margin-bottom:1.5rem;font-size:1.5rem;color:var(--text)}
+.login-card input{width:100%;padding:.75rem;margin-bottom:.75rem;border:1px solid var(--border);border-radius:6px;font-size:1rem;text-align:center;background:var(--input-bg);color:var(--text)}
+.login-card button{width:100%;padding:.75rem;background:#667eea;color:#fff;border:none;border-radius:6px;font-size:1rem;cursor:pointer}
+.login-card button:hover{background:#5a6fd6}
+.error{color:#ff6b6b;font-size:.9rem;margin-bottom:.5rem;text-align:center}
+.app{display:none;height:100vh}
+.sidebar{width:240px;background:var(--card-bg);color:var(--text);padding:1.5rem 0;display:flex;flex-direction:column;flex-shrink:0;border-right:1px solid var(--border)}
+.sidebar h2{padding:0 1.25rem;font-size:1.1rem;margin-bottom:1.5rem;color:var(--accent)}
+.sidebar nav a{display:block;padding:.75rem 1.25rem;color:var(--muted);text-decoration:none;font-size:.95rem;cursor:pointer}
+.sidebar nav a:hover,.sidebar nav a.active{background:var(--bg);color:var(--text)}
+.sidebar .spacer{flex:1}
+.sidebar .logout-btn{display:block;padding:.75rem 1.25rem;color:#ff6b6b;text-decoration:none;font-size:.95rem;cursor:pointer;border-top:1px solid var(--border)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.main-content{flex:1;padding:2rem;overflow-y:auto;position:relative}
+.main-content::before{content:'';position:absolute;inset:0;background:url('/uploads/admin-bg.jpg') center/cover no-repeat;opacity:.05;pointer-events:none;z-index:0}
+.main-content>*{position:relative;z-index:1}
+.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem}
+.page-header h2{font-size:1.5rem;color:var(--text)}
+button{padding:.5rem 1rem;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.9rem}
+button:hover{opacity:.9}
+.btn-sm{padding:.35rem .7rem;font-size:.85rem}
+.btn-danger{background:#e74c3c}
+.btn-secondary{background:var(--border);color:var(--text)}
+.btn-secondary:hover{background:var(--muted)}
+.card{background:var(--card-bg);border-radius:8px;padding:1.5rem;margin-bottom:1rem;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:.75rem;text-align:left;border-bottom:1px solid var(--border)}
+th{font-weight:600;color:var(--muted);font-size:.9rem}
+td{color:var(--text)}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.5rem;margin:.5rem 0}
+.stat-item{background:var(--input-bg);border-radius:6px;padding:.5rem;text-align:center;border:1px solid var(--border)}
+.stat-item .val{font-size:1.1rem;font-weight:700;color:#667eea}
+.stat-item .lbl{font-size:.7rem;color:#666;text-transform:uppercase;letter-spacing:.3px}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);align-items:center;justify-content:center;z-index:100}
+.modal.open{display:flex}
+.modal-content{background:var(--card-bg);border-radius:12px;padding:2rem;width:480px;max-width:90vw;max-height:80vh;overflow-y:auto;border:1px solid var(--border)}
+.modal-content h3{margin-bottom:1.25rem;color:var(--text)}
+.modal-content label{display:block;font-size:.9rem;margin-bottom:.3rem;color:var(--muted)}
+.modal-content input,.modal-content select{width:100%;padding:.6rem;margin-bottom:.75rem;border:1px solid var(--border);border-radius:6px;font-size:.95rem;background:var(--input-bg);color:var(--text)}
+.modal-actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem}
+.toast{position:fixed;top:1rem;right:1rem;background:#2dce89;color:#fff;padding:.75rem 1.25rem;border-radius:8px;font-size:.9rem;transform:translateY(-120%);transition:transform .3s;z-index:200}
+.toast.show{transform:translateY(0)}
+.toast.error{background:#e74c3c}
+.loading-state{text-align:center;padding:3rem;color:#666}
+.empty-state{text-align:center;padding:2rem;color:#444}
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:12px;font-size:.75rem;font-weight:600}
+.badge-owner{background:#3498db;color:#fff}
+.badge-admin{background:#e74c3c;color:#fff}
+.badge-pending{background:#f39c12;color:#fff}
+.badge-confirmed{background:#3498db;color:#fff}
+.badge-preparing{background:#f39c12;color:#fff}
+.badge-ready{background:#2dce89;color:#fff}
+.badge-delivered{background:#95a5a6;color:#fff}
+.badge-cancelled{background:#e74c3c;color:#fff}
+input::placeholder{color:#444}
+
+/* Mobile: Common small tweaks */
+  @media(max-width:768px){
+    .app{height:auto;min-height:100dvh}
+    .sidebar{position:fixed;left:-280px;top:0;bottom:0;width:260px;z-index:100;transition:left .3s ease;box-shadow:4px 0 20px rgba(0,0,0,.5)}
+    .sidebar.open{left:0}
+    .sidebar .close-btn{display:block;text-align:right;padding:.5rem 1rem;color:#ff6b6b;cursor:pointer;font-size:1.2rem}
+    .main{margin-left:0;padding:1rem}
+    .main-content{padding:1rem}
+    .page-header{flex-direction:column;align-items:flex-start;gap:.5rem}
+    .page-header h2{font-size:1.2rem}
+    .stat-grid{grid-template-columns:repeat(2,1fr);gap:.4rem}
+    .stat-item{padding:.4rem}
+    .stat-item .val{font-size:1rem}
+    .card{padding:1rem}
+    .modal-content{padding:1.25rem;width:100%;max-width:100vw;border-radius:16px 16px 0 0;margin-top:auto;max-height:85dvh}
+    .modal{align-items:flex-end}
+    .modal-actions button{flex:1}
+    .toast{left:1rem;right:1rem;top:auto;bottom:1rem;text-align:center;border-radius:10px}
+    .hamburger{display:flex!important;align-items:center;justify-content:center;width:44px;height:44px;background:#111;border:1px solid #222;color:#e0e0e0;font-size:1.3rem;border-radius:10px;cursor:pointer;position:fixed;top:.6rem;left:.6rem;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+    .hamburger:hover{background:#222}
+    .hamburger:active{transform:scale(.95)}
+    button, .btn-sm{padding:.7rem 1rem;min-height:44px}
+    button:active{transform:scale(.97)}
+    .dynatable{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    table{font-size:.75rem}
+    th,td{padding:.4rem .5rem}
+    table thead{display:none}
+    table tbody tr{display:block;margin-bottom:.75rem;background:#111;border-radius:8px;border:1px solid #222;padding:.5rem}
+    table tbody td{display:flex;justify-content:space-between;align-items:center;padding:.35rem .5rem;border:none;border-bottom:1px solid #1a1a1a;gap:.5rem}
+    table tbody td:last-child{border-bottom:none;flex-wrap:wrap}
+    table tbody td:before{content:attr(data-label);font-weight:600;color:#666;font-size:.75rem;text-transform:uppercase;flex-shrink:0}
+    table tbody td button{margin:.15rem}
+  }
+  @media(max-width:480px){
+    .stat-grid{grid-template-columns:repeat(2,1fr);gap:.3rem}
+    .stat-item .val{font-size:.9rem}
+    .stat-item .lbl{font-size:.65rem}
+    .card{padding:.75rem}
+    .main-content{padding:.75rem}
+    .login-card{padding:1.5rem}
+    .login-card h1{font-size:1.2rem}
+  }
+  @media(max-width:380px){
+    .stat-grid{grid-template-columns:1fr 1fr;gap:.25rem}
+  }
+.hamburger{display:none}
+.close-btn{display:none}
+</style>
+</head>
+<body>
+
+<div class="login-page" id="login-page">
+  <div class="login-card" id="login-card">
+    <h1>Super Admin Login</h1>
+    <div class="error" id="login-error"></div>
+    <div id="login-step-1">
+      <p style="text-align:center;color:var(--muted);font-size:.9rem;margin-bottom:1rem">Step 1: Enter login code</p>
+      <input type="text" id="login-code" placeholder="Admin code" autocomplete="off">
+      <button onclick="loginWithCode()">Next</button>
+    </div>
+    <div id="login-step-2" style="display:none">
+      <p style="text-align:center;color:var(--muted);font-size:.9rem;margin-bottom:1rem">Step 2: Enter authenticator code</p>
+      <input type="text" id="login-totp" placeholder="6-digit code" inputmode="numeric" autocomplete="off">
+      <button onclick="verifyTotpLogin()">Verify & Login</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="app" id="app">
+  <button class="hamburger" id="hamburger" onclick="toggleSidebar()">&#9776;</button>
+  <div class="sidebar" id="sidebar">
+    <div class="close-btn" onclick="toggleSidebar()">&#10005;</div>
+    <h2>Admin Panel</h2>
+    <nav>
+      <a data-view="dashboard" class="active" onclick="showView('dashboard')">Dashboard</a>
+      <a data-view="owners" onclick="showView('owners')">Manage Owners</a>
+      <a data-view="settings" onclick="showView('settings')">&#9881; Settings</a>
+    </nav>
+    <div class="spacer"></div>
+    <a class="logout-btn" onclick="logout()">Logout</a>
+  </div>
+  <div class="main">
+    <div class="main-content" id="main-content">
+      <div class="loading-state">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-content" id="modal-content"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var jwtToken = localStorage.getItem('admin_jwt_token') || null;
+var tempTotpToken = null;
+var currentView = null;
+var dashboardBuilt = false;
+var ownersBuilt = false;
+
+// Apply saved theme
+(function(){var t=localStorage.getItem('admin-theme')||'dark';setAdminTheme(t)})();
+
+function getAuthHeaders() {
+  var headers = {};
+  if (jwtToken) headers['Authorization'] = 'Bearer ' + jwtToken;
+  return headers;
+}
+
+function authFetch(url, options) {
+  var opts = options || {};
+  opts.headers = Object.assign({}, getAuthHeaders(), opts.headers || {});
+  return fetch(url, opts);
+}
+
+function checkAuth() {
+  if (!jwtToken) return;
+  fetch('/api/v1/auth/verify', { headers: getAuthHeaders() })
+    .then(function(r){return r.json()})
+    .then(function(data){
+      if (data.authenticated && data.role === 'super_admin') {
+        document.getElementById('login-page').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+        showView('dashboard');
+      } else {
+        jwtToken = null;
+        localStorage.removeItem('admin_jwt_token');
+      }
+    })
+    .catch(function(){
+      jwtToken = null;
+      localStorage.removeItem('admin_jwt_token');
+    });
+}
+
+function loginWithCode() {
+  var code = document.getElementById('login-code').value;
+  var errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if (!code) { errEl.textContent = 'Enter the code'; return; }
+
+  fetch('/api/v1/admin/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code: code })
+  })
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if (data.error) { errEl.textContent = data.error; return; }
+    if (data.totp_required) {
+      tempTotpToken = data.temp_token;
+      document.getElementById('login-step-1').style.display = 'none';
+      document.getElementById('login-step-2').style.display = 'block';
+      document.getElementById('login-totp').focus();
+      return;
+    }
+    jwtToken = data.token;
+    localStorage.setItem('admin_jwt_token', jwtToken);
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    showView('dashboard');
+  })
+  .catch(function(){
+    errEl.textContent = 'Connection error';
+  });
+}
+
+function verifyTotpLogin() {
+  var code = document.getElementById('login-totp').value;
+  var errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if (!code) { errEl.textContent = 'Enter the authenticator code'; return; }
+
+  fetch('/api/v1/admin/login/totp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ temp_token: tempTotpToken, code: code })
+  })
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if (data.error) { errEl.textContent = data.error; return; }
+    jwtToken = data.token;
+    localStorage.setItem('admin_jwt_token', jwtToken);
+    tempTotpToken = null;
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    showView('dashboard');
+  })
+  .catch(function(){
+    errEl.textContent = 'Connection error';
+  });
+}
+
+function logout() {
+  stopPolling();
+  jwtToken = null;
+  tempTotpToken = null;
+  dashboardBuilt = false;
+  ownersBuilt = false;
+  localStorage.removeItem('admin_jwt_token');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('login-code').value = '';
+  document.getElementById('login-totp').value = '';
+  document.getElementById('login-error').textContent = '';
+  document.getElementById('login-step-1').style.display = 'block';
+  document.getElementById('login-step-2').style.display = 'none';
+}
+
+var pollInterval = null;
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+function startPolling(view) {
+  stopPolling();
+  pollInterval = setInterval(function(){
+    if (view === 'dashboard') updateDashboard();
+    else if (view === 'owners') updateOwners();
+    else if (view === 'ownerview') updateOwnerView();
+  }, 5000);
+}
+
+function stopPolling() {
+  if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+}
+
+function showView(view) {
+  document.querySelectorAll('.sidebar nav a').forEach(function(a){a.classList.remove('active')});
+  var el = document.querySelector('.sidebar nav a[data-view="' + view + '"]');
+  if (el) el.classList.add('active');
+  document.getElementById('sidebar').classList.remove('open');
+  stopPolling();
+  if (view === 'owners') viewRestaurantId = null;
+  currentView = view;
+  if (view === 'dashboard') {
+    if (!dashboardBuilt) { renderDashboard(); }
+    else { updateDashboard(); }
+    startPolling('dashboard');
+  }
+  else if (view === 'owners') {
+    if (!document.getElementById('owners-table-wrap')) { renderOwners(); }
+    else { updateOwners(); }
+    startPolling('owners');
+  }
+  else if (view === 'settings') {
+    renderSettings();
+  }
+}
+
+function showToast(msg, isError) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast' + (isError ? ' error' : '');
+  el.classList.add('show');
+  setTimeout(function(){el.classList.remove('show')}, 3000);
+}
+
+function showModal(html) {
+  var modal = document.getElementById('modal');
+  document.getElementById('modal-content').innerHTML = html;
+  modal.classList.add('open');
+  modal.onclick = function(e) {
+    if (e.target === this) { modal.classList.remove('open'); modal.onclick = null; }
+  };
+}
+
+function closeModal() {
+  var modal = document.getElementById('modal');
+  modal.classList.remove('open');
+  modal.onclick = null;
+}
+
+/* =========== DASHBOARD =========== */
+function renderDashboard() {
+  var main = document.getElementById('main-content');
+  main.innerHTML =
+    '<div class="page-header"><h2>Dashboard</h2></div>' +
+    '<div id="dash-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem">' +
+      '<div class="card" style="text-align:center"><div id="dash-owner-count" style="font-size:2rem;font-weight:700">0</div><div style="color:#888">Restaurant Owners</div></div>' +
+      '<div class="card" style="text-align:center"><div id="dash-admin-count" style="font-size:2rem;font-weight:700">0</div><div style="color:#888">Super Admins</div></div>' +
+      '<div class="card" style="text-align:center"><div id="dash-rest-count" style="font-size:2rem;font-weight:700">0</div><div style="color:#888">Restaurants</div></div>' +
+      '<div class="card" style="text-align:center"><div id="dash-revenue" style="font-size:2rem;font-weight:700">₹0.00</div><div style="color:#888">Total Yearly Revenue</div></div>' +
+      '<div class="card" style="text-align:center"><div id="dash-orders" style="font-size:2rem;font-weight:700">0</div><div style="color:#888">Total Orders</div></div>' +
+    '</div>' +
+    '<div class="card" style="margin-top:1rem">' +
+      '<h3>Restaurants Overview</h3>' +
+      '<div id="dash-rest-list"></div>' +
+    '</div>';
+  dashboardBuilt = true;
+  updateDashboard();
+}
+
+function updateDashboard() {
+  Promise.all([
+    authFetch('/api/v1/admin/owners'),
+    authFetch('/api/v1/admin/restaurants/stats')
+  ])
+  .then(function(responses){return Promise.all(responses.map(function(r){return r.json()}))})
+  .then(function(data){
+    var owners = data[0];
+    var stats = data[1];
+    var ownerCount = 0, adminCount = 0;
+    owners.forEach(function(o){
+      if (o.role === 'owner') ownerCount++;
+      else if (o.role === 'super_admin') adminCount++;
+    });
+    var totalRevenue = 0, totalOrders = 0;
+    stats.forEach(function(s){
+      totalRevenue += Number(s.yearlyRevenue);
+      totalOrders += Number(s.totalOrders);
+    });
+
+    document.getElementById('dash-owner-count').textContent = ownerCount;
+    document.getElementById('dash-admin-count').textContent = adminCount;
+    document.getElementById('dash-rest-count').textContent = stats.length;
+    document.getElementById('dash-revenue').textContent = '\u20B9' + totalRevenue.toFixed(2);
+    document.getElementById('dash-orders').textContent = Number(totalOrders) || 0;
+
+    var listHtml = '';
+    stats.forEach(function(s){
+      listHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 0;border-bottom:1px solid #1a1a1a">' +
+        '<div><strong>' + s.name + '</strong><br><span style="color:#888;font-size:0.85rem">Owner: ' + (s.owner || 'N/A') + '</span></div>' +
+        '<div style="text-align:right"><span style="font-weight:700">\u20B9' + Number(s.yearlyRevenue).toFixed(2) + '</span><br><span style="color:#888;font-size:0.85rem">' + s.totalOrders + ' orders</span></div>' +
+      '</div>';
+    });
+    document.getElementById('dash-rest-list').innerHTML = stats.length === 0 ? '<div class="empty-state">No restaurants yet</div>' : listHtml;
+  })
+  .catch(function(){
+    document.getElementById('dash-rest-list').innerHTML = '<div class="empty-state">Error loading data</div>';
+  });
+}
+
+/* =========== MANAGE OWNERS =========== */
+function renderOwners() {
+  var main = document.getElementById('main-content');
+  main.innerHTML =
+    '<div class="page-header"><h2>Manage Owners</h2><button onclick="showAddOwnerModal()">+ Add Owner</button></div>' +
+    '<div id="owners-table-wrap"></div>' +
+    '<div class="card" style="margin-top:1rem">' +
+      '<h3>All Restaurants Summary</h3>' +
+      '<div class="stat-grid">' +
+        '<div class="stat-item"><div class="val" id="own-total-daily">₹0.00</div><div class="lbl">Total Daily</div></div>' +
+        '<div class="stat-item"><div class="val" id="own-total-weekly">₹0.00</div><div class="lbl">Total Weekly</div></div>' +
+        '<div class="stat-item"><div class="val" id="own-total-yearly">₹0.00</div><div class="lbl">Total Yearly</div></div>' +
+        '<div class="stat-item"><div class="val" id="own-total-orders">0</div><div class="lbl">Total Orders</div></div>' +
+        '<div class="stat-item"><div class="val" id="own-total-items">0</div><div class="lbl">Menu Items</div></div>' +
+        '<div class="stat-item"><div class="val" id="own-total-customers">0</div><div class="lbl">Total Customers</div></div>' +
+      '</div>' +
+    '</div>';
+  ownersBuilt = true;
+  updateOwners();
+}
+
+function updateOwners() {
+  Promise.all([
+    authFetch('/api/v1/admin/owners'),
+    authFetch('/api/v1/admin/restaurants/stats')
+  ])
+  .then(function(responses){return Promise.all(responses.map(function(r){return r.json()}))})
+  .then(function(data){
+    var owners = data[0];
+    var stats = data[1];
+    var statsMap = {};
+    stats.forEach(function(s){ statsMap[s.id] = s; });
+
+    var rows = '';
+    owners.forEach(function(o){
+      if (o.role !== 'super_admin') {
+        var s = statsMap[o.restaurant_id];
+        var rname = escHtml(o.restaurant_name || o.restaurant_id);
+        var uname = escHtml(o.username);
+        var phone = o.phone ? escHtml(o.phone) : '<span style="color:#999">\u2014</span>';
+        var email = (o.email ? escHtml(o.email) + (o.email_verified ? ' &#9989;' : ' &#10060;') : '<span style="color:#999">\u2014</span>');
+        rows += '<tr>' +
+          '<td data-label="Restaurant"><strong>' + rname + '</strong></td>' +
+          '<td data-label="Owner">' + uname + '</td>' +
+          '<td data-label="Email">' + email + '</td>' +
+          '<td data-label="Phone">' + phone + '</td>' +
+          '<td data-label="Daily"><strong>\u20B9' + (s ? Number(s.dailyRevenue).toFixed(2) : '0.00') + '</strong></td>' +
+          '<td data-label="Weekly"><strong>\u20B9' + (s ? Number(s.weeklyRevenue).toFixed(2) : '0.00') + '</strong></td>' +
+          '<td data-label="Yearly"><strong>\u20B9' + (s ? Number(s.yearlyRevenue).toFixed(2) : '0.00') + '</strong></td>' +
+          '<td data-label="Orders">' + (s ? s.totalOrders : '0') + '</td>' +
+          '<td data-label="Customers">' + (s ? s.totalCustomers : '0') + '</td>' +
+          '<td data-label="Items">' + (s ? s.menuItems : '0') + '</td>' +
+          '<td data-label="Actions" style="white-space:nowrap">' +
+            '<button class="btn-sm" onclick="showOwnerView(\'' + escHtml(o.restaurant_id) + '\',\'' + rname + '\')">View</button> ' +
+            '<button class="btn-sm" onclick="showEditOwnerModal(' + o.id + ',\'' + uname + '\',\'' + (o.email ? escHtml(o.email) : '') + '\',\'' + (o.phone ? escHtml(o.phone) : '') + '\',\'' + rname + '\')">Edit</button> ' +
+            '<button class="btn-sm" onclick="showResetPasswordModal(' + o.id + ',\'' + uname + '\')">Reset PW</button> ' +
+            '<button class="btn-sm btn-danger" onclick="deleteOwner(' + o.id + ',\'' + uname + '\')">Delete</button>' +
+          '</td></tr>';
+      }
+    });
+
+    var totalDaily = 0, totalWeekly = 0, totalYearly = 0, totalOrd = 0, totalItems = 0, totalCust = 0;
+    stats.forEach(function(s){
+      totalDaily += Number(s.dailyRevenue);
+      totalWeekly += Number(s.weeklyRevenue);
+      totalYearly += Number(s.yearlyRevenue);
+      totalOrd += s.totalOrders;
+      totalItems += s.menuItems;
+      totalCust += s.totalCustomers;
+    });
+
+    document.getElementById('owners-table-wrap').innerHTML = rows === '' ? '<div class="empty-state">No owners yet</div>' :
+      '<div class="dynatable"><table><thead><tr><th>Restaurant</th><th>Owner</th><th>Email</th><th>Phone</th><th>Daily</th><th>Weekly</th><th>Yearly</th><th>Orders</th><th>Customers</th><th>Items</th><th>Actions</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+
+    document.getElementById('own-total-daily').textContent = '\u20B9' + totalDaily.toFixed(2);
+    document.getElementById('own-total-weekly').textContent = '\u20B9' + totalWeekly.toFixed(2);
+    document.getElementById('own-total-yearly').textContent = '\u20B9' + totalYearly.toFixed(2);
+    document.getElementById('own-total-orders').textContent = totalOrd;
+    document.getElementById('own-total-items').textContent = totalItems;
+    document.getElementById('own-total-customers').textContent = totalCust;
+  })
+  .catch(function(e){
+    document.getElementById('owners-table-wrap').innerHTML = '<div class="empty-state">Error loading owners</div>';
+  });
+}
+
+function showAddOwnerModal() {
+  showModal(
+    '<h3>Add New Owner</h3>' +
+    '<label>Username</label><input type="text" id="new-username" placeholder="e.g. restaurant2">' +
+    '<label>Email</label><input type="email" id="new-email" placeholder="owner@example.com">' +
+    '<label>Phone</label><input type="tel" id="new-phone" placeholder="Phone number" inputmode="numeric">' +
+    '<label>Password (min 6 characters)</label><input type="password" id="new-password" placeholder="Enter password">' +
+    '<label>Restaurant ID (leave blank to auto-create)</label><input type="text" id="new-restaurant-id" placeholder="e.g. rest-abc-123">' +
+    '<label>Restaurant Name (only if creating new restaurant)</label><input type="text" id="new-restaurant-name" placeholder="e.g. My Restaurant">' +
+    '<div class="modal-actions"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button onclick="addOwner()">Add Owner</button></div>'
+  );
+}
+
+function addOwner() {
+  var username = document.getElementById('new-username').value;
+  var password = document.getElementById('new-password').value;
+  var email = document.getElementById('new-email').value;
+  var phone = document.getElementById('new-phone').value.replace(/\s/g, '');
+  var restaurantId = document.getElementById('new-restaurant-id').value;
+  var restaurantName = document.getElementById('new-restaurant-name').value;
+
+  if (!username || !password) { showToast('Username and password required', true); return; }
+
+  authFetch('/api/v1/admin/owners', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: username, password: password, email: email || undefined, phone: phone || undefined, restaurantId: restaurantId || undefined, restaurantName: restaurantName || undefined })
+  })
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if (data.error) { showToast(data.error, true); return; }
+    closeModal();
+    showToast('Owner added');
+    renderOwners();
+  })
+  .catch(function(){showToast('Error adding owner', true)});
+}
+
+function showEditOwnerModal(id, username, email, phone, restaurantName) {
+  showModal(
+    '<h3>Edit Owner</h3>' +
+    '<label>Username</label><input type="text" id="edit-username" value="' + username + '">' +
+    '<label>Email</label><input type="email" id="edit-email" value="' + email + '">' +
+    '<label>Phone</label><input type="tel" id="edit-phone" value="' + phone + '" inputmode="numeric">' +
+    '<label>Restaurant Name</label><input type="text" id="edit-restaurant-name" value="' + (restaurantName || '') + '">' +
+    '<div class="modal-actions"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button onclick="updateOwner(' + id + ')">Save Changes</button></div>'
+  );
+}
+
+function updateOwner(id) {
+  var username = document.getElementById('edit-username').value;
+  var email = document.getElementById('edit-email').value;
+  var phone = document.getElementById('edit-phone').value.replace(/\s/g, '');
+  var restaurantName = document.getElementById('edit-restaurant-name').value;
+  if (!username) { showToast('Username required', true); return; }
+
+  var body = { username: username };
+  if (email !== undefined) body.email = email;
+  if (phone !== undefined) body.phone = phone;
+  if (restaurantName) body.restaurantName = restaurantName;
+
+  authFetch('/api/v1/admin/owners/' + id, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if (data.error) { showToast(data.error, true); return; }
+    closeModal();
+    showToast('Owner updated');
+    renderOwners();
+  })
+  .catch(function(){showToast('Error updating owner', true)});
+}
+
+function deleteOwner(id, username) {
+  if (!confirm('Delete owner "' + username + '"? This cannot be undone.')) return;
+  authFetch('/api/v1/admin/owners/' + id, { method: 'DELETE' })
+    .then(function(r){return r.json()})
+    .then(function(data){
+      if (data.error) { showToast(data.error, true); return; }
+      showToast('Deleted ' + username);
+      renderOwners();
+    })
+    .catch(function(){showToast('Error deleting owner', true)});
+}
+
+function showResetPasswordModal(id, username) {
+  showModal(
+    '<h3>Reset Password</h3>' +
+    '<p style="color:#555;margin-bottom:1rem">Resetting password for <strong>' + username + '</strong></p>' +
+    '<label>New Password (min 6 characters)</label><input type="password" id="reset-password" placeholder="Enter new password">' +
+    '<div class="modal-actions"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button onclick="resetPassword(' + id + ')">Reset</button></div>'
+  );
+}
+
+function resetPassword(id) {
+  var password = document.getElementById('reset-password').value;
+  if (!password || password.length < 6) { showToast('Password must be at least 6 characters', true); return; }
+
+  authFetch('/api/v1/admin/owners/' + id + '/reset-password', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: password })
+  })
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if (data.error) { showToast(data.error, true); return; }
+    closeModal();
+    showToast('Password reset');
+  })
+  .catch(function(){showToast('Error resetting password', true)});
+}
+
+var viewRestaurantId = null;
+
+function escHtml(s) { return (s+'').replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]}); }
+
+function showOwnerView(restaurantId, restaurantName) {
+  stopPolling();
+  viewRestaurantId = restaurantId;
+  var main = document.getElementById('main-content');
+  main.innerHTML =
+    '<div class="page-header"><h2>' + escHtml(restaurantName) + '</h2><button class="btn-secondary" onclick="showView(\'owners\')">Back to Owners</button></div>' +
+    '<div id="ov-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem;margin-bottom:1rem">' +
+      '<div class="card" style="text-align:center"><div id="ov-daily" style="font-size:1.3rem;font-weight:700">₹0.00</div><div style="color:#666;font-size:.8rem">Daily Revenue</div></div>' +
+      '<div class="card" style="text-align:center"><div id="ov-weekly" style="font-size:1.3rem;font-weight:700">₹0.00</div><div style="color:#666;font-size:.8rem">Weekly Revenue</div></div>' +
+      '<div class="card" style="text-align:center"><div id="ov-yearly" style="font-size:1.3rem;font-weight:700">₹0.00</div><div style="color:#666;font-size:.8rem">Yearly Revenue</div></div>' +
+      '<div class="card" style="text-align:center"><div id="ov-orders" style="font-size:1.3rem;font-weight:700">0</div><div style="color:#666;font-size:.8rem">Total Orders</div></div>' +
+      '<div class="card" style="text-align:center"><div id="ov-customers" style="font-size:1.3rem;font-weight:700">0</div><div style="color:#666;font-size:.8rem">Customers</div></div>' +
+      '<div class="card" style="text-align:center"><div id="ov-items" style="font-size:1.3rem;font-weight:700">0</div><div style="color:#666;font-size:.8rem">Menu Items</div></div>' +
+    '</div>' +
+    '<div class="card" style="margin-bottom:1rem">' +
+      '<h3 style="margin-bottom:.75rem">Recent Orders</h3><div id="ov-orders-list"><div class="loading-state">Loading orders...</div></div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<h3 style="margin-bottom:.75rem">Menu Items</h3><div id="ov-menu-list"><div class="loading-state">Loading menu...</div></div>' +
+    '</div>';
+  updateOwnerView();
+  startPolling('ownerview');
+}
+
+function updateOwnerView() {
+  var rid = viewRestaurantId;
+  if (!rid) return;
+
+  Promise.all([
+    authFetch('/api/v1/admin/restaurants/' + rid + '/orders'),
+    authFetch('/api/v1/admin/restaurants/' + rid + '/menu')
+  ])
+  .then(function(responses){return Promise.all(responses.map(function(r){return r.json()}))})
+  .then(function(data){
+    var orders = data[0];
+    var menuItems = data[1];
+
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var weekAgo = new Date(today.getTime() - 7 * 86400000);
+    var yearStart = new Date(now.getFullYear(), 0, 1);
+
+    var dailyRev = 0, weeklyRev = 0, yearlyRev = 0;
+    orders.forEach(function(o){
+      if (o.status === 'cancelled') return;
+      var d = new Date(o.created_at);
+      if (d >= today) dailyRev += Number(o.total);
+      if (d >= weekAgo) weeklyRev += Number(o.total);
+      if (d >= yearStart) yearlyRev += Number(o.total);
+    });
+    var customers = new Set(orders.map(function(o){return o.customer_name})).size;
+
+    document.getElementById('ov-daily').textContent = '\u20B9' + dailyRev.toFixed(2);
+    document.getElementById('ov-weekly').textContent = '\u20B9' + weeklyRev.toFixed(2);
+    document.getElementById('ov-yearly').textContent = '\u20B9' + yearlyRev.toFixed(2);
+    document.getElementById('ov-orders').textContent = orders.length;
+    document.getElementById('ov-customers').textContent = customers;
+    document.getElementById('ov-items').textContent = menuItems.length;
+
+    var ordersHtml = orders.length === 0 ? '<div class="empty-state">No orders yet</div>' :
+      '<div class="dynatable"><table><thead><tr><th>Order #</th><th>Customer</th><th>Table</th><th>Items</th><th>Total</th><th>Status</th><th>Time</th></tr></thead><tbody>' +
+      orders.slice(0, 20).map(function(o){
+        var itemNames = (o.items || []).map(function(i){return escHtml(i.name) + ' x' + i.quantity}).join(', ');
+        return '<tr><td data-label="Order #">#' + o.id + '</td><td data-label="Customer">' + escHtml(o.customer_name) + '</td><td data-label="Table">' + escHtml(o.table_number || '—') + '</td><td data-label="Items" style="font-size:.85rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + itemNames + '</td><td data-label="Total">\u20B9' + Number(o.total).toFixed(2) + '</td><td data-label="Status"><span class="badge badge-' + o.status + '">' + o.status + '</span></td><td data-label="Time" style="font-size:.85rem;color:#666">' + new Date(o.created_at).toLocaleString() + '</td></tr>';
+      }).join('') +
+      '</tbody></table></div>';
+
+    document.getElementById('ov-orders-list').innerHTML = ordersHtml;
+
+    var cats = {};
+    menuItems.forEach(function(i){
+      if (!cats[i.category]) cats[i.category] = [];
+      cats[i.category].push(i);
+    });
+
+    var menuHtml = Object.keys(cats).length === 0 ? '<div class="empty-state">No menu items</div>' :
+      Object.keys(cats).map(function(cat){
+        return '<h4 style="color:#667eea;margin:.75rem 0 .5rem">' + cat + '</h4>' +
+          '<table><thead><tr><th>Name</th><th>Price</th><th>Veg</th></tr></thead><tbody>' +
+          cats[cat].map(function(i){
+            return '<tr><td data-label="Name">' + i.name + '</td><td data-label="Price">\u20B9' + Number(i.price).toFixed(2) + '</td><td data-label="Veg">' + (i.is_veg ? '🟢' : '🔴') + '</td></tr>';
+          }).join('') +
+          '</tbody></table>';
+      }).join('');
+
+    document.getElementById('ov-menu-list').innerHTML = menuHtml;
+  })
+  .catch(function(){
+    document.getElementById('ov-orders-list').innerHTML = '<div class="empty-state">Error loading data</div>';
+    document.getElementById('ov-menu-list').innerHTML = '<div class="empty-state">Error loading data</div>';
+  });
+}
+
+/* =========== SETTINGS =========== */
+function renderSettings() {
+  var main = document.getElementById('main-content');
+  main.innerHTML = '<div class="page-header"><h2>Settings</h2></div><div class="loading-state">Loading settings...</div>';
+
+  authFetch('/api/v1/admin/settings')
+  .then(function(r){return r.json()})
+  .then(function(settings){
+    var codeDisplay = settings.admin_code_masked || '****';
+    var totpEnabled = settings.totp_enabled === '1';
+    main.innerHTML =
+      '<div class="page-header"><h2>Settings</h2></div>' +
+      '<div class="card">' +
+        '<h3>Admin Login Code</h3>' +
+        '<p style="color:var(--muted);font-size:.9rem;margin-bottom:.75rem">Current code: <strong>' + codeDisplay + '</strong></p>' +
+        '<button onclick="showChangeAdminCodeModal()">Change Code</button>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h3>Two-Factor Authentication (TOTP)</h3>' +
+        '<p style="color:var(--muted);font-size:.9rem;margin-bottom:.75rem">' + (totpEnabled ? '&#9989; Enabled' : '&#10060; Disabled') + '</p>' +
+        (totpEnabled
+          ? '<button class="btn-danger" onclick="showDisableTotpModal()">Disable 2FA</button>'
+          : '<button onclick="showSetupTotpModal()">Enable 2FA</button>'
+        ) +
+      '</div>' +
+      '<div class="card">' +
+        '<h3>Change Password</h3>' +
+        '<p style="color:var(--muted);font-size:.9rem;margin-bottom:.75rem">Update super admin account password</p>' +
+        '<button onclick="showChangePasswordModal()">Change Password</button>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h3>Theme</h3>' +
+        '<p style="color:var(--muted);font-size:.9rem;margin-bottom:.75rem">Toggle between dark and light mode</p>' +
+        '<div style="display:flex;gap:.5rem">' +
+          '<button class="btn-sm" onclick="setAdminTheme(\'dark\')" id="theme-dark-btn">Dark</button>' +
+          '<button class="btn-sm btn-secondary" onclick="setAdminTheme(\'light\')" id="theme-light-btn">Light</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h3>Clean Up Orphan Restaurants</h3>' +
+        '<p style="color:var(--muted);font-size:.9rem;margin-bottom:.75rem">Remove restaurants with no assigned owner</p>' +
+        '<button class="btn-danger" onclick="cleanupOrphanRestaurants()">Remove Orphans</button>' +
+        '<div id="orphan-result" style="margin-top:.5rem;font-size:.85rem"></div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h3>System Info</h3>' +
+        '<div id="sys-info" style="font-size:.85rem;color:var(--muted)"><div class="loading-state">Loading...</div></div>' +
+      '</div>';
+    loadSystemInfo();
+  })
+  .catch(function(){
+    main.innerHTML = '<div class="page-header"><h2>Settings</h2></div><div class="empty-state">Error loading settings</div>';
+  });
+}
+
+function loadSystemInfo() {
+  authFetch('/api/v1/admin/system/info')
+  .then(function(r){return r.json()})
+  .then(function(info){
+    var size = info.database_size_bytes;
+    var sizeStr = size < 1024 ? size + ' B' : size < 1048576 ? (size / 1024).toFixed(1) + ' KB' : (size / 1048576).toFixed(1) + ' MB';
+    var uptime = info.uptime_seconds;
+    var uptimeStr = uptime < 60 ? uptime + 's' : uptime < 3600 ? Math.floor(uptime/60) + 'm ' + (uptime%60) + 's' : Math.floor(uptime/3600) + 'h ' + Math.floor((uptime%3600)/60) + 'm';
+    document.getElementById('sys-info').innerHTML =
+      '<table style="font-size:.85rem">' +
+        '<tr><td style="color:#888;padding:.3rem .5rem">Database Size</td><td style="padding:.3rem .5rem">' + sizeStr + '</td></tr>' +
+        '<tr><td style="color:#888;padding:.3rem .5rem">Restaurants</td><td style="padding:.3rem .5rem">' + info.restaurants + '</td></tr>' +
+        '<tr><td style="color:#888;padding:.3rem .5rem">Owners</td><td style="padding:.3rem .5rem">' + info.owners + '</td></tr>' +
+        '<tr><td style="color:#888;padding:.3rem .5rem">Total Orders</td><td style="padding:.3rem .5rem">' + info.total_orders + '</td></tr>' +
+        '<tr><td style="color:#888;padding:.3rem .5rem">Menu Items</td><td style="padding:.3rem .5rem">' + info.total_menu_items + '</td></tr>' +
+        '<tr><td style="color:#888;padding:.3rem .5rem">Node</td><td style="padding:.3rem .5rem">' + info.node_version + '</td></tr>' +
+        '<tr><td style="color:#888;padding:.3rem .5rem">Uptime</td><td style="padding:.3rem .5rem">' + uptimeStr + '</td></tr>' +
+      '</table>';
+  })
+  .catch(function(){
+    document.getElementById('sys-info').innerHTML = '<span style="color:#e74c3c">Error loading system info</span>';
+  });
+}
+
+function showChangeAdminCodeModal() {
+  showModal(
+    '<h3>Change Admin Login Code</h3>' +
+    '<p style="color:#888;font-size:.9rem;margin-bottom:1rem">This code is used to access the super admin panel.</p>' +
+    '<label>New Code</label><input type="text" id="new-admin-code" placeholder="Enter new code" minlength="4">' +
+    '<div class="modal-actions"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button onclick="updateAdminCode()">Save</button></div>'
+  );
+}
+
+function updateAdminCode() {
+  var code = document.getElementById('new-admin-code').value;
+  if (!code || code.length < 4) { showToast('Code must be at least 4 characters', true); return; }
+  authFetch('/api/v1/admin/settings', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ admin_code: code })
+  })
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if (data.error) { showToast(data.error, true); return; }
+    closeModal();
+    showToast('Admin code updated');
+    renderSettings();
+  })
+  .catch(function(){showToast('Error updating code', true)});
+}
+
+function showChangePasswordModal() {
+  showModal(
+    '<h3>Change Super Admin Password</h3>' +
+    '<label>Current Password</label><input type="password" id="sa-current-pw" placeholder="Current password">' +
+    '<label>New Password (min 6 chars)</label><input type="password" id="sa-new-pw" placeholder="New password">' +
+    '<div class="modal-actions"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button onclick="updateSuperAdminPassword()">Save</button></div>'
+  );
+}
+
+function updateSuperAdminPassword() {
+  var current = document.getElementById('sa-current-pw').value;
+  var newPw = document.getElementById('sa-new-pw').value;
+  if (!current || !newPw) { showToast('Both fields required', true); return; }
+  if (newPw.length < 6) { showToast('New password must be at least 6 characters', true); return; }
+  authFetch('/api/v1/auth/change-password', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ currentPassword: current, newPassword: newPw })
+  })
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if (data.error) { showToast(data.error, true); return; }
+    closeModal();
+    showToast('Password changed');
+  })
+  .catch(function(){showToast('Error changing password', true)});
+}
+
+/* =========== TOTP SETUP =========== */
+function showSetupTotpModal() {
+  showModal(
+    '<h3>Enable Two-Factor Authentication</h3>' +
+    '<div id="totp-setup-step1">' +
+      '<p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem">Generating QR code...</p>' +
+      '<div class="loading-state">Loading...</div>' +
+    '</div>' +
+    '<div class="modal-actions"><button class="btn-secondary" onclick="closeModal()">Cancel</button></div>'
+  );
+  // Fetch TOTP setup data
+  authFetch('/api/v1/admin/totp/setup', { method: 'POST' })
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if (data.error) { showToast(data.error, true); closeModal(); return; }
+    var content = document.getElementById('modal-content');
+    content.innerHTML =
+      '<h3>Enable Two-Factor Authentication</h3>' +
+      '<div id="totp-setup-step1">' +
+        '<p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem">Scan this QR code with Google Authenticator or Authy:</p>' +
+        '<div style="text-align:center;margin:1rem 0">' +
+          '<img src="' + data.qr_code + '" style="max-width:220px;border-radius:8px;background:#fff;padding:8px">' +
+        '</div>' +
+        '<div style="text-align:center;margin-bottom:1rem">' +
+          '<button class="btn-sm btn-secondary" onclick="navigator.clipboard.writeText(\'' + data.secret + '\');showToast(\'Secret copied!\')">' +
+            'Copy Secret' +
+          '</button>' +
+          '<button class="btn-sm" style="margin-left:.5rem" onclick="navigator.clipboard.writeText(\'' + data.otpauth + '\');showToast(\'OTP link copied! Open in your authenticator app\' + (location.protocol===\'https:\'?\' or open this link on your phone\':\'\'))">' +
+            'Copy Link' +
+          '</button>' +
+        '</div>' +
+        '<p style="color:var(--muted);font-size:.85rem;text-align:center;word-break:break-all;margin-bottom:1rem">' +
+          'Or enter this key manually: <code style="color:var(--text);font-size:.8rem;user-select:all">' + data.secret + '</code>' +
+        '</p>' +
+        '<label>Enter the 6-digit code from your authenticator app to confirm:</label>' +
+        '<input type="text" id="totp-verify-code" placeholder="000000" inputmode="numeric" style="text-align:center;font-size:1.2rem;letter-spacing:4px">' +
+        '<div class="modal-actions">' +
+          '<button class="btn-secondary" onclick="closeModal()">Cancel</button>' +
+          '<button onclick="confirmTotpSetup()">Verify & Enable</button>' +
+        '</div>' +
+      '</div>';
+  })
+  .catch(function(){showToast('Error setting up TOTP', true); closeModal();});
+}
+
+function confirmTotpSetup() {
+  var code = document.getElementById('totp-verify-code').value;
+  if (!code) { showToast('Enter the code from your authenticator app', true); return; }
+  authFetch('/api/v1/admin/totp/confirm', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code: code })
+  })
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if (data.error) { showToast(data.error, true); return; }
+    closeModal();
+    showToast('Two-factor authentication enabled!');
+    renderSettings();
+  })
+  .catch(function(){showToast('Error confirming TOTP', true)});
+}
+
+function showDisableTotpModal() {
+  showModal(
+    '<h3>Disable Two-Factor Authentication</h3>' +
+    '<p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem">Enter a code from your authenticator app to confirm disabling 2FA.</p>' +
+    '<label>Authenticator Code</label><input type="text" id="totp-disable-code" placeholder="000000" inputmode="numeric" style="text-align:center;font-size:1.2rem;letter-spacing:4px">' +
+    '<div class="modal-actions"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-danger" onclick="confirmDisableTotp()">Disable 2FA</button></div>'
+  );
+}
+
+function confirmDisableTotp() {
+  var code = document.getElementById('totp-disable-code').value;
+  if (!code) { showToast('Enter a code from your authenticator app', true); return; }
+  authFetch('/api/v1/admin/totp/disable', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code: code })
+  })
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if (data.error) { showToast(data.error, true); return; }
+    closeModal();
+    showToast('Two-factor authentication disabled');
+    renderSettings();
+  })
+  .catch(function(){showToast('Error disabling TOTP', true)});
+}
+
+function cleanupOrphanRestaurants(e) {
+  e = e || window.event;
+  var btn = e && e.target;
+  btn.disabled = true;
+  btn.textContent = 'Cleaning...';
+  document.getElementById('orphan-result').textContent = '';
+  authFetch('/api/v1/admin/restaurants/orphans', { method: 'DELETE' })
+  .then(function(r){return r.json()})
+  .then(function(data){
+    btn.disabled = false;
+    btn.textContent = 'Remove Orphans';
+    if (data.error) { showToast(data.error, true); return; }
+    document.getElementById('orphan-result').innerHTML = '<span style="color:#2ecc71">Removed ' + data.deleted + ' orphan restaurant(s)</span>';
+    if (data.deleted_restaurants) {
+      document.getElementById('orphan-result').innerHTML += '<br><span style="color:#888;font-size:.8rem">' + data.deleted_restaurants.join(', ') + '</span>';
+    }
+    renderDashboard();
+  })
+  .catch(function(){
+    btn.disabled = false;
+    btn.textContent = 'Remove Orphans';
+    showToast('Error cleaning up', true);
+  });
+}
+
+function setAdminTheme(theme) {
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+  localStorage.setItem('admin-theme', theme);
+  var d = document.getElementById('theme-dark-btn');
+  var l = document.getElementById('theme-light-btn');
+  if (d && l) {
+    d.className = theme === 'dark' ? 'btn-sm' : 'btn-sm btn-secondary';
+    l.className = theme === 'light' ? 'btn-sm' : 'btn-sm btn-secondary';
+  }
+}
+
+checkAuth();
+</script>
+</body>
+</html>

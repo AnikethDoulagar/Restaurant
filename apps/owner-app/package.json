@@ -1,0 +1,12 @@
+{
+  "name": "owner-app",
+  "version": "1.0.0",
+  "description": "Restaurant Owner dashboard frontend",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}
