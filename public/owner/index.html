@@ -303,6 +303,8 @@
       <a onclick="showView('orders')" data-view="orders">&#x1F4E6; <span>Orders</span></a>
       <a onclick="showView('menu')" data-view="menu">&#x1F372; <span>Menu</span></a>
       <a onclick="showView('settings')" data-view="settings">&#x2699;&#xFE0F; <span>Settings</span></a>
+      <a onclick="window.open('/customer/menu.html?restaurant=' + restaurantId, '_blank')">&#x1F37D;&#xFE0F; <span>Customer Menu</span></a>
+      <a id="admin-link" style="display:none" onclick="window.location.href=adminPath">&#x1F6E1;&#xFE0F; <span>Super Admin</span></a>
       <a class="logout" onclick="logout()">&#x2190; <span>Sign Out</span></a>
     </nav>
   </aside>
@@ -320,6 +322,9 @@
 <script>
 let restaurantId = null;
 let jwtToken = localStorage.getItem('jwt_token') || null;
+let adminPath = '/admin';
+
+fetch('/api/server/info').then(r => r.json()).then(d => { if (d.adminPath) adminPath = d.adminPath; }).catch(() => {});
 
 function getAuthHeaders() {
   const headers = {};
@@ -339,7 +344,14 @@ async function checkAuth() {
     const res = await authFetch('/api/v1/auth/verify');
     const data = await res.json();
     if (data.authenticated) {
-      if (data.role === 'super_admin') { window.location.href = '/admin'; return; }
+      if (data.role === 'super_admin') {
+        document.getElementById('admin-link').style.display = 'flex';
+        restaurantId = data.restaurantId;
+        document.getElementById('login-page').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+        showView('dashboard');
+        return;
+      }
       restaurantId = data.restaurantId;
       document.getElementById('login-page').style.display = 'none';
       document.getElementById('app').style.display = 'flex';
@@ -378,7 +390,7 @@ async function login() {
       }
       errEl.textContent = data.error; return;
     }
-    if (data.role === 'super_admin') { window.location.href = '/admin'; return; }
+    if (data.role === 'super_admin') { window.location.href = adminPath; return; }
     jwtToken = data.token;
     localStorage.setItem('jwt_token', jwtToken);
     restaurantId = data.restaurantId;

@@ -108,6 +108,8 @@ input::placeholder{color:#444}
     <nav>
       <a data-view="dashboard" class="active" onclick="showView('dashboard')">Dashboard</a>
       <a data-view="owners" onclick="showView('owners')">Manage Owners</a>
+      <a onclick="window.open('/', '_blank')">Owner Dashboard</a>
+      <a onclick="fetch('/api/v1/admin/restaurants/stats').then(r=>r.json()).then(d=>{if(d.length)window.open('/customer/menu.html?restaurant='+d[0].id,'_blank')}).catch(()=>window.open('/customer/menu.html','_blank'))">Customer Menu</a>
     </nav>
     <div class="spacer"></div>
     <a class="logout-btn" onclick="logout()">Logout</a>

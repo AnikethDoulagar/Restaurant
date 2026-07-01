@@ -22,7 +22,9 @@ router.get('/info', (req, res) => {
     ip,
     port,
     localUrl: `http://${ip}:${port}`,
-    host: req.headers.host || `localhost:${port}`
+    host: req.headers.host || `localhost:${port}`,
+    adminPath: process.env.ADMIN_SECRET_PATH || null,
+    customerUrl: '/customer/menu.html'
   });
 });
 
