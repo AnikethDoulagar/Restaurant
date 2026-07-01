@@ -4,3 +4,11 @@ node_modules/
 *.sqlite
 private/
 .DS_Store
+*.zip
+apps/api/node_modules/
+apps/owner-app/node_modules/
+apps/customer-app/node_modules/
+apps/admin-app/node_modules/
+email-otp-auth/node_modules/
+email-otp-auth/data/
+apps/api/private/
