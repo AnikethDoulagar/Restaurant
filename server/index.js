@@ -49,6 +49,10 @@ app.use('/api/server', serverRoutes);
 app.use('/api/v1/auth', v1AuthRoutes);
 app.use('/api/v1/admin', v1AdminRoutes);
 
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: Date.now() });
+});
+
 const adminSecretPath = process.env.ADMIN_SECRET_PATH || null;
 if (adminSecretPath) {
   app.get('/' + adminSecretPath, (req, res) => {
