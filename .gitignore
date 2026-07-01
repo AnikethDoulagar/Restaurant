@@ -2,7 +2,6 @@ node_modules/
 .env
 *.db
 *.sqlite
-private/
 .DS_Store
 *.zip
 apps/api/node_modules/
