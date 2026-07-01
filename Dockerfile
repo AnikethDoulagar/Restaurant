@@ -24,11 +24,6 @@ ENV DB_PATH=/data/platform.db
 ENV NODE_ENV=production
 ENV PORT=3000
 
-VOLUME /data
-
 EXPOSE 3000
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
 
 ENTRYPOINT ["tini", "--", "/app/entrypoint.sh"]
