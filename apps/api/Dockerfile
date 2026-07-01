@@ -18,7 +18,6 @@ RUN chmod +x entrypoint.sh
 ENV DB_PATH=/data/platform.db
 ENV PORT=3000
 EXPOSE 3000
-VOLUME /data
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
