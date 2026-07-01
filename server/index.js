@@ -65,6 +65,10 @@ if (adminSecretPath) {
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
+app.get('/app', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'combined.html'));
+});
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'owner', 'index.html'));
 });
