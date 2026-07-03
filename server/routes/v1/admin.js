@@ -184,4 +184,37 @@ router.get('/restaurants/:restaurantId/menu', requireJwt, requireSuperAdmin, (re
   res.json(items);
 });
 
+router.get('/codes', requireJwt, requireSuperAdmin, (req, res) => {
+  const codes = db.prepare(
+    'SELECT rc.*, o.username as used_by_username FROM registration_codes rc LEFT JOIN owners o ON rc.used_by = o.id ORDER BY rc.created_at DESC'
+  ).all();
+  res.json(codes);
+});
+
+router.post('/codes/generate', requireJwt, requireSuperAdmin, (req, res) => {
+  const count = Math.min(Math.max(parseInt(req.body.count) || 1, 1), 100);
+  const crypto = require('crypto');
+  const generated = [];
+  const insert = db.prepare('INSERT INTO registration_codes (code) VALUES (?)');
+  for (let i = 0; i < count; i++) {
+    const code = crypto.randomBytes(4).toString('hex').toUpperCase();
+    try {
+      insert.run(code);
+      generated.push(code);
+    } catch (e) {
+      // code collision, skip
+    }
+  }
+  res.json({ generated: generated.length, codes: generated });
+});
+
+router.delete('/codes/:id', requireJwt, requireSuperAdmin, (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: 'Invalid code ID' });
+  const code = db.prepare('SELECT * FROM registration_codes WHERE id = ?').get(id);
+  if (!code) return res.status(404).json({ error: 'Code not found' });
+  db.prepare('DELETE FROM registration_codes WHERE id = ?').run(id);
+  res.json({ success: true });
+});
+
 module.exports = router;

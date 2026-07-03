@@ -108,6 +108,7 @@ input::placeholder{color:#444}
     <nav>
       <a data-view="dashboard" class="active" onclick="showView('dashboard')">Dashboard</a>
       <a data-view="owners" onclick="showView('owners')">Manage Owners</a>
+      <a data-view="codes" onclick="showView('codes')">Reg Codes</a>
       <a onclick="window.open('/', '_blank')">Owner Dashboard</a>
       <a onclick="fetch('/api/v1/admin/restaurants/stats').then(r=>r.json()).then(d=>{if(d.length)window.open('/customer/menu.html?restaurant='+d[0].id,'_blank')}).catch(()=>window.open('/customer/menu.html','_blank'))">Customer Menu</a>
     </nav>
@@ -238,6 +239,10 @@ function showView(view) {
     if (!document.getElementById('owners-table-wrap')) { renderOwners(); }
     else { updateOwners(); }
     startPolling('owners');
+  }
+  else if (view === 'codes') {
+    if (!document.getElementById('codes-list')) { renderCodes(); }
+    else { updateCodes(); }
   }
 }
 
@@ -567,6 +572,75 @@ function updateOwnerView() {
     document.getElementById('ov-orders-list').innerHTML = '<div class="empty-state">Error loading data</div>';
     document.getElementById('ov-menu-list').innerHTML = '<div class="empty-state">Error loading data</div>';
   });
+}
+
+/* =========== REG CODES =========== */
+function renderCodes() {
+  var main = document.getElementById('main-content');
+  main.innerHTML =
+    '<div class="page-header"><h2>Registration Codes</h2><button onclick="showGenerateCodesModal()">+ Generate Codes</button></div>' +
+    '<div class="card" style="margin-bottom:1rem">' +
+      '<h3 style="margin-bottom:.75rem">All Codes</h3><div id="codes-list"><div class="loading-state">Loading...</div></div>' +
+    '</div>';
+  updateCodes();
+}
+
+function updateCodes() {
+  authFetch('/api/v1/admin/codes')
+    .then(function(r){return r.json()})
+    .then(function(codes){
+      var html = codes.length === 0 ? '<div class="empty-state">No codes generated yet</div>' :
+        '<table><thead><tr><th>Code</th><th>Used</th><th>Used By</th><th>Created</th><th>Actions</th></tr></thead><tbody>' +
+        codes.map(function(c){
+          return '<tr>' +
+            '<td style="font-family:monospace;font-weight:700;letter-spacing:1px">' + c.code + '</td>' +
+            '<td>' + (c.used ? '<span class="badge badge-ready" style="background:#666">Used</span>' : '<span class="badge badge-pending">Available</span>') + '</td>' +
+            '<td>' + (c.used_by_username || '<span style="color:#555">\u2014</span>') + '</td>' +
+            '<td style="font-size:.85rem;color:#666">' + new Date(c.created_at).toLocaleString() + '</td>' +
+            '<td>' + (!c.used ? '<button class="btn-sm btn-danger" onclick="deleteCode(' + c.id + ')">Delete</button>' : '') + '</td>' +
+          '</tr>';
+        }).join('') +
+        '</tbody></table>';
+      document.getElementById('codes-list').innerHTML = html;
+    })
+    .catch(function(){
+      document.getElementById('codes-list').innerHTML = '<div class="empty-state">Error loading codes</div>';
+    });
+}
+
+function showGenerateCodesModal() {
+  showModal(
+    '<h3>Generate Registration Codes</h3>' +
+    '<label>Number of codes (1\u2013100)</label><input type="number" id="gen-count" value="5" min="1" max="100">' +
+    '<div class="modal-actions"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button onclick="generateCodes()">Generate</button></div>'
+  );
+}
+
+function generateCodes() {
+  var count = parseInt(document.getElementById('gen-count').value) || 5;
+  authFetch('/api/v1/admin/codes/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ count: count })
+  })
+  .then(function(r){return r.json()})
+  .then(function(data){
+    closeModal();
+    showToast('Generated ' + data.generated + ' code(s)');
+    updateCodes();
+  })
+  .catch(function(){showToast('Error generating codes', true)});
+}
+
+function deleteCode(id) {
+  if (!confirm('Delete this code?')) return;
+  authFetch('/api/v1/admin/codes/' + id, { method: 'DELETE' })
+    .then(function(r){return r.json()})
+    .then(function(data){
+      if (data.success) { showToast('Code deleted'); updateCodes(); }
+      else { showToast(data.error || 'Error', true); }
+    })
+    .catch(function(){showToast('Error deleting code', true)});
 }
 
 checkAuth();
