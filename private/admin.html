@@ -131,8 +131,6 @@ input::placeholder{color:#444}
 <script>
 var jwtToken = localStorage.getItem('admin_jwt_token') || null;
 var currentView = null;
-var dashboardBuilt = false;
-var ownersBuilt = false;
 
 function getAuthHeaders() {
   var headers = {};
@@ -194,8 +192,6 @@ function loginWithCode() {
 function logout() {
   stopPolling();
   jwtToken = null;
-  dashboardBuilt = false;
-  ownersBuilt = false;
   localStorage.removeItem('admin_jwt_token');
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-page').style.display = 'flex';
@@ -231,18 +227,15 @@ function showView(view) {
   if (view === 'owners') viewRestaurantId = null;
   currentView = view;
   if (view === 'dashboard') {
-    if (!dashboardBuilt) { renderDashboard(); }
-    else { updateDashboard(); }
+    renderDashboard();
     startPolling('dashboard');
   }
   else if (view === 'owners') {
-    if (!document.getElementById('owners-table-wrap')) { renderOwners(); }
-    else { updateOwners(); }
+    renderOwners();
     startPolling('owners');
   }
   else if (view === 'codes') {
-    if (!document.getElementById('codes-list')) { renderCodes(); }
-    else { updateCodes(); }
+    renderCodes();
   }
 }
 
