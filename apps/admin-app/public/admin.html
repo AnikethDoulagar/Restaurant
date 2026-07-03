@@ -374,9 +374,51 @@ function renderDashboard() {
     '<div class="card" style="margin-top:1rem">' +
       '<h3>Restaurants Overview</h3>' +
       '<div id="dash-rest-list"></div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">' +
+        '<h3 style="margin:0">Registration Codes</h3>' +
+        '<button onclick="generateRegCode()">+ Generate Code</button>' +
+      '</div>' +
+      '<p style="color:#888;font-size:.85rem;margin-bottom:.75rem">Give these codes to restaurant owners so they can register. Each code works once.</p>' +
+      '<div id="reg-codes-list"><div class="loading-state">Loading...</div></div>' +
     '</div>';
   dashboardBuilt = true;
   updateDashboard();
+}
+
+function generateRegCode() {
+  authFetch('/api/v1/admin/registration-codes', { method: 'POST' })
+    .then(function(r){return r.json()})
+    .then(function(data){
+      if (data.error) { showToast(data.error, true); return; }
+      showToast('Code generated: ' + data.code);
+      loadRegCodes();
+    })
+    .catch(function(){showToast('Error generating code', true)});
+}
+
+function loadRegCodes() {
+  authFetch('/api/v1/admin/registration-codes')
+    .then(function(r){return r.json()})
+    .then(function(codes){
+      var html = codes.length === 0 ? '<div class="empty-state">No codes generated yet</div>' :
+        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem">' +
+        codes.map(function(c){
+          var status = c.used ? '<span style="color:#e74c3c">Used</span>' : '<span style="color:#2ecc71">Available</span>';
+          return '<div style="background:var(--input-bg);border:1px solid var(--border);border-radius:6px;padding:.75rem;display:flex;justify-content:space-between;align-items:center">' +
+            '<div><strong style="font-family:monospace;font-size:1rem;user-select:all">' + c.code + '</strong><br><span style="font-size:.75rem;color:#888">' + status + '</span></div>' +
+            '<button class="btn-sm btn-secondary" onclick="navigator.clipboard.writeText(\'' + c.code + '\');showToast(\'Copied!\')">Copy</button>' +
+          '</div>';
+        }).join('') +
+        '</div>';
+      var el = document.getElementById('reg-codes-list');
+      if (el) el.innerHTML = html;
+    })
+    .catch(function(){
+      var el = document.getElementById('reg-codes-list');
+      if (el) el.innerHTML = '<div class="empty-state">Error loading codes</div>';
+    });
 }
 
 function updateDashboard() {
@@ -413,6 +455,7 @@ function updateDashboard() {
       '</div>';
     });
     document.getElementById('dash-rest-list').innerHTML = stats.length === 0 ? '<div class="empty-state">No restaurants yet</div>' : listHtml;
+    loadRegCodes();
   })
   .catch(function(){
     document.getElementById('dash-rest-list').innerHTML = '<div class="empty-state">Error loading data</div>';

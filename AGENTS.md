@@ -28,6 +28,7 @@
 - **Owner delete failing**: `registration_codes.used_by` FK constraint blocked deletion. Fix: delete registration codes referencing the owner before deleting the owner row.
 - **Added registration codes UI**: "Reg Codes" sidebar link with generate/list/delete.
 - **Error handling**: Added try-catch to all admin routes so DB errors return JSON instead of crashing.
+- **Nav bug**: Dashboard stopped working after visiting Manage Owners. Root cause: cached `dashboardBuilt` flag prevented re-render, `updateDashboard()` tried to update absent DOM elements. Fix: always re-render on view switch (removed build flags).
 
 ## Notes
 

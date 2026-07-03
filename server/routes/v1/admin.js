@@ -217,4 +217,20 @@ router.delete('/codes/:id', requireJwt, requireSuperAdmin, (req, res) => {
   res.json({ success: true });
 });
 
+router.delete('/restaurants/:id', requireJwt, requireSuperAdmin, (req, res) => {
+  const id = req.params.id;
+  const restaurant = db.prepare('SELECT * FROM restaurants WHERE id = ?').get(id);
+  if (!restaurant) return res.status(404).json({ error: 'Restaurant not found' });
+
+  const owner = db.prepare("SELECT id FROM owners WHERE restaurant_id = ? AND role = 'owner'").get(id);
+  if (owner) return res.status(400).json({ error: 'Restaurant still has an owner. Delete the owner first.' });
+
+  db.prepare('DELETE FROM order_items WHERE restaurant_id = ?').run(id);
+  db.prepare('DELETE FROM orders WHERE restaurant_id = ?').run(id);
+  db.prepare('DELETE FROM menu_items WHERE restaurant_id = ?').run(id);
+  db.prepare('DELETE FROM sidebar_links WHERE restaurant_id = ?').run(id);
+  db.prepare('DELETE FROM restaurants WHERE id = ?').run(id);
+  res.json({ success: true, deleted: restaurant.name });
+});
+
 module.exports = router;

@@ -117,15 +117,20 @@ router.post('/owners', requireJwt, requireSuperAdmin, (req, res) => {
 });
 
 router.delete('/owners/:id', requireJwt, requireSuperAdmin, (req, res) => {
-  const ownerId = parseInt(req.params.id);
-  if (isNaN(ownerId)) return res.status(400).json({ error: 'Invalid owner ID' });
+  try {
+    const ownerId = parseInt(req.params.id);
+    if (isNaN(ownerId)) return res.status(400).json({ error: 'Invalid owner ID' });
 
-  const owner = db.prepare('SELECT * FROM owners WHERE id = ?').get(ownerId);
-  if (!owner) return res.status(404).json({ error: 'Owner not found' });
-  if (owner.role === 'super_admin') return res.status(403).json({ error: 'Cannot delete a super admin' });
+    const owner = db.prepare('SELECT * FROM owners WHERE id = ?').get(ownerId);
+    if (!owner) return res.status(404).json({ error: 'Owner not found' });
+    if (owner.role === 'super_admin') return res.status(403).json({ error: 'Cannot delete a super admin' });
 
-  db.prepare('DELETE FROM owners WHERE id = ?').run(ownerId);
-  res.json({ success: true, deleted: owner.username });
+    db.prepare('DELETE FROM owners WHERE id = ?').run(ownerId);
+    res.json({ success: true, deleted: owner.username });
+  } catch (err) {
+    console.error('Delete owner error:', err);
+    res.status(500).json({ error: 'Failed to delete owner. Server error: ' + err.message });
+  }
 });
 
 router.put('/owners/:id', requireJwt, requireSuperAdmin, (req, res) => {

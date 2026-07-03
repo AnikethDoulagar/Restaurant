@@ -132,9 +132,25 @@
   .order-card .actions { display: flex; gap: 0.4rem; margin-top: 0.6rem; flex-wrap: wrap; }
 
   .table-badge { display: inline-block; background: #e67e22; color: #fff; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; }
-  .settings-group { margin-bottom: 1.5rem; }
-  .settings-group label { display: block; font-weight: 500; margin-bottom: 0.4rem; color: var(--label); }
-  .settings-group input { width: 100%; padding: 0.7rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; max-width: 400px; background: var(--input-bg); color: var(--text); }
+  .settings-layout { display: flex; flex-direction: column; gap: 1.25rem; }
+  .settings-section { background: var(--card-bg); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; transition: background 0.3s; }
+  .settings-section-header { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-light); }
+  .settings-section-header h3 { font-size: 1rem; font-weight: 600; color: var(--heading); margin: 0; }
+  .settings-section-header p { font-size: 0.8rem; color: var(--text-muted); margin: 0.15rem 0 0; }
+  .settings-section-icon { width: 36px; height: 36px; border-radius: 8px; background: rgba(230,126,34,0.1); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+  .settings-section-body { padding: 1.25rem; }
+  .settings-section-body .settings-group:last-child { margin-bottom: 0; }
+  .settings-group { margin-bottom: 1.25rem; }
+  .settings-group label { display: block; font-weight: 500; margin-bottom: 0.35rem; color: var(--label); font-size: 0.9rem; }
+  .settings-group input { width: 100%; padding: 0.7rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; max-width: 400px; background: var(--input-bg); color: var(--text); transition: border-color 0.2s; }
+  .settings-group input:focus { border-color: #e67e22; outline: none; }
+  .settings-hint { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.4; }
+  .settings-divider { border: none; border-top: 1px solid var(--border-light); margin: 1rem 0; }
+  .settings-inline-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .settings-inline-row label { white-space: nowrap; }
+  .settings-name-image-row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+  .settings-input-group { display: flex; gap: 0.5rem; align-items: center; }
+  .settings-input-group input { width: 70px; text-align: center; max-width: 70px; padding: 0.45rem; }
   .qr-section { text-align: center; padding: 1.5rem; }
   .qr-section canvas, .qr-section img { max-width: 200px; margin: 1rem auto; display: block; }
   .qr-section .qr-url { font-size: 0.8rem; color: var(--text-muted); word-break: break-all; margin-top: 0.5rem; }
@@ -209,7 +225,10 @@
     .qr-grid-item img { max-width: 100px; }
     .qr-section canvas, .qr-section img { max-width: 160px; }
     .theme-toggle { justify-content: center; }
-    #restaurant-id-card p { font-size: 0.8rem; word-break: break-all; }
+    .settings-inline-row { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .settings-name-image-row { flex-direction: column; align-items: stretch; }
+    .settings-section-header { padding: 0.85rem 1rem; }
+    .settings-section-body { padding: 1rem; }
   }
   .hamburger { display: none; }
 
@@ -244,26 +263,19 @@
       </p>
     </div>
     <div id="register-fields" style="display:none">
-      <p style="text-align:center;color:#888;font-size:0.9rem;margin-bottom:1rem" id="register-step-text">Step 1: Enter your email</p>
-      <div id="register-email-step">
-        <input type="email" id="reg-email" placeholder="Your email address">
-        <button onclick="nextToDetails()">Next</button>
-      </div>
-      <div id="register-details-step" style="display:none">
-        <input type="text" id="reg-username" placeholder="Choose a username">
-        <input type="password" id="reg-password" placeholder="Choose a password (min 6 chars)">
-        <input type="text" id="reg-phone" placeholder="Phone number" inputmode="numeric">
-        <input type="text" id="reg-restaurant-name" placeholder="Your restaurant name">
-        <button onclick="register()">Create Account</button>
-      </div>
-      <div id="register-code-step" style="display:none">
-        <p style="text-align:center;color:#555;font-size:0.9rem;margin-bottom:0.5rem">A 6-digit code was sent to your email</p>
-        <input type="text" id="reg-code" placeholder="Enter 6-digit code">
-        <button onclick="verifyAndLogin()">Verify & Sign In</button>
-        <button class="resend-btn" onclick="resendOtp()" style="display:block;width:100%;margin-top:0.5rem;background:transparent;color:#e67e22;border:1px solid #e67e22;padding:0.6rem;border-radius:6px;font-size:0.9rem;cursor:pointer">Resend Code</button>
-        <p id="resend-status" style="text-align:center;font-size:0.8rem;color:#888;margin-top:0.4rem"></p>
-      </div>
+      <p style="text-align:center;color:#888;font-size:0.9rem;margin-bottom:1rem">Create your restaurant account</p>
+      <input type="text" id="reg-code" placeholder="Registration code (get from admin)" style="text-transform:uppercase">
+      <input type="email" id="reg-email" placeholder="Your email address">
+      <input type="text" id="reg-phone" placeholder="Phone number" inputmode="numeric">
+      <input type="text" id="reg-restaurant-name" placeholder="Your restaurant name">
+      <input type="text" id="reg-username" placeholder="Choose a username">
+      <input type="password" id="reg-password" placeholder="Choose a password (min 6 chars)">
+      <button onclick="register()">Create Account</button>
       <div class="login-error" id="register-error"></div>
+      <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);text-align:center;font-size:0.82rem;color:var(--text-muted)">
+        Need help or want to list your restaurant?<br>
+        Contact: <a href="mailto:anikethdoulagar@gmail.com" style="color:#e67e22">anikethdoulagar@gmail.com</a> &bull; <a href="tel:+918019845845" style="color:#e67e22">8019845845</a>
+      </div>
       <p style="text-align:center;margin-top:1rem;font-size:0.85rem;color:#888">
         Already have an account?
         <a href="#" onclick="showLogin();return false" style="color:#e67e22">Sign In</a>
@@ -298,15 +310,7 @@
   <button class="hamburger" id="hamburger" onclick="toggleMenu()">&#9776;</button>
   <aside class="sidebar" id="sidebar">
     <div class="brand"><span>Restaurant</span> Dashboard</div>
-    <nav>
-      <a class="active" onclick="showView('dashboard')" data-view="dashboard">&#x1F4CA; <span>Dashboard</span></a>
-      <a onclick="showView('orders')" data-view="orders">&#x1F4E6; <span>Orders</span></a>
-      <a onclick="showView('menu')" data-view="menu">&#x1F372; <span>Menu</span></a>
-      <a onclick="showView('settings')" data-view="settings">&#x2699;&#xFE0F; <span>Settings</span></a>
-      <a onclick="window.open('/customer/menu.html?restaurant=' + restaurantId, '_blank')">&#x1F37D;&#xFE0F; <span>Customer Menu</span></a>
-      <a id="admin-link" style="display:none" onclick="window.location.href=adminPath">&#x1F6E1;&#xFE0F; <span>Super Admin</span></a>
-      <a class="logout" onclick="logout()">&#x2190; <span>Sign Out</span></a>
-    </nav>
+    <nav id="sidebar-nav"></nav>
   </aside>
 
   <main class="main" id="main-content">
@@ -338,21 +342,64 @@ function authFetch(url, options = {}) {
   return fetch(url, opts);
 }
 
+function buildSidebar(isSuperAdmin) {
+  const nav = document.getElementById('sidebar-nav');
+  nav.innerHTML =
+    '<a class="active" onclick="showView(\'dashboard\')" data-view="dashboard">\u{1F4CA} <span>Dashboard</span></a>' +
+    '<a onclick="showView(\'orders\')" data-view="orders">\u{1F4E6} <span>Orders</span></a>' +
+    '<a onclick="showView(\'menu\')" data-view="menu">\u{1F372} <span>Menu</span></a>' +
+    '<a onclick="showView(\'settings\')" data-view="settings">\u{2699}\u{FE0F} <span>Settings</span></a>';
+
+  // Load custom sidebar links from API
+  authFetch('/api/v1/sidebar?restaurantId=' + restaurantId)
+    .then(r => r.json())
+    .then(links => {
+      links.forEach(l => {
+        if (!l.enabled) return;
+        if (l.link_type === 'view') {
+          const a = document.createElement('a');
+          a.setAttribute('data-view', l.link_value);
+          a.innerHTML = (l.icon || '\u{1F517}') + ' <span>' + l.label + '</span>';
+          a.onclick = function(){ showView(l.link_value); };
+          nav.insertBefore(a, nav.lastElementChild);
+        } else if (l.link_type === 'url') {
+          const a = document.createElement('a');
+          a.innerHTML = (l.icon || '\u{1F517}') + ' <span>' + l.label + '</span>';
+          a.onclick = function(){ window.open(l.link_value, '_blank'); };
+          nav.insertBefore(a, nav.lastElementChild);
+        }
+      });
+    })
+    .catch(() => {});
+
+  // Always show Customer Menu and sign out
+  const cust = document.createElement('a');
+  cust.innerHTML = '\u{1F37D}\u{FE0F} <span>Customer Menu</span>';
+  cust.onclick = function(){ window.open('/customer/menu.html?restaurant=' + restaurantId, '_blank'); };
+  nav.appendChild(cust);
+
+  if (isSuperAdmin) {
+    const admin = document.createElement('a');
+    admin.innerHTML = '\u{1F6E1}\u{FE0F} <span>Super Admin</span>';
+    admin.onclick = function(){ window.location.href = adminPath; };
+    nav.appendChild(admin);
+  }
+
+  const logoutEl = document.createElement('a');
+  logoutEl.className = 'logout';
+  logoutEl.innerHTML = '\u{2190} <span>Sign Out</span>';
+  logoutEl.onclick = logout;
+  nav.appendChild(logoutEl);
+}
+
 async function checkAuth() {
   if (!jwtToken) return;
   try {
     const res = await authFetch('/api/v1/auth/verify');
     const data = await res.json();
     if (data.authenticated) {
-      if (data.role === 'super_admin') {
-        document.getElementById('admin-link').style.display = 'flex';
-        restaurantId = data.restaurantId;
-        document.getElementById('login-page').style.display = 'none';
-        document.getElementById('app').style.display = 'flex';
-        showView('dashboard');
-        return;
-      }
       restaurantId = data.restaurantId;
+      buildSidebar(data.role === 'super_admin');
       document.getElementById('login-page').style.display = 'none';
       document.getElementById('app').style.display = 'flex';
       showView('dashboard');
@@ -377,17 +424,6 @@ async function login() {
     });
     const data = await res.json();
     if (!res.ok) {
-      if (data.unverified && data.email) {
-        regEmail = data.email;
-        document.getElementById('login-fields').style.display = 'none';
-        document.getElementById('register-fields').style.display = 'block';
-        document.getElementById('register-email-step').style.display = 'none';
-        document.getElementById('register-details-step').style.display = 'none';
-        document.getElementById('register-code-step').style.display = 'block';
-        document.getElementById('register-step-text').textContent = 'Verify your email';
-        document.getElementById('register-error').textContent = '';
-        return;
-      }
       errEl.textContent = data.error; return;
     }
     if (data.role === 'super_admin') { window.location.href = adminPath; return; }
@@ -395,6 +431,7 @@ async function login() {
     localStorage.setItem('jwt_token', jwtToken);
     restaurantId = data.restaurantId;
     prevOrderCount = 0;
+    buildSidebar(false);
     document.getElementById('login-page').style.display = 'none';
     document.getElementById('app').style.display = 'flex';
     showView('dashboard');
@@ -414,20 +451,54 @@ async function logout() {
 }
 
 /* =========== REGISTRATION =========== */
-let regEmail = '';
 
 function showRegister() {
   document.getElementById('login-fields').style.display = 'none';
   document.getElementById('reset-fields').style.display = 'none';
   document.getElementById('register-fields').style.display = 'block';
   document.getElementById('login-subtitle').textContent = 'Create your restaurant account';
-  document.getElementById('register-step-text').textContent = 'Step 1: Enter your email';
-  document.getElementById('register-email-step').style.display = 'block';
-  document.getElementById('register-code-step').style.display = 'none';
-  document.getElementById('register-details-step').style.display = 'none';
   document.getElementById('register-error').textContent = '';
-  regEmail = '';
 }
+
+async function register() {
+  const registrationCode = document.getElementById('reg-code').value;
+  const email = document.getElementById('reg-email').value;
+  const username = document.getElementById('reg-username').value;
+  const password = document.getElementById('reg-password').value;
+  const phone = document.getElementById('reg-phone').value.replace(/\s/g, '');
+  const restaurantName = document.getElementById('reg-restaurant-name').value;
+  const errEl = document.getElementById('register-error');
+  errEl.textContent = '';
+  if (!registrationCode) { errEl.textContent = 'Registration code required. Ask the super admin for one.'; return; }
+  if (!email) { errEl.textContent = 'Email required'; return; }
+  if (!username || !password) { errEl.textContent = 'Username and password required'; return; }
+  if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters'; return; }
+  if (!phone || !/^\d{7,15}$/.test(phone)) { errEl.textContent = 'Valid phone number required'; return; }
+
+  try {
+    const res = await fetch('/api/v1/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, email, phone, registrationCode, restaurantName: restaurantName || undefined })
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error; return; }
+    jwtToken = data.token;
+    localStorage.setItem('jwt_token', jwtToken);
+    restaurantId = data.restaurantId;
+    prevOrderCount = 0;
+    buildSidebar(false);
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    showView('dashboard');
+  } catch (e) {
+    errEl.textContent = 'Connection error';
+  }
+}
+
+/* =========== FORGOT PASSWORD =========== */
+let resetEmail = '';
+let resetVerified = false;
 
 function showLogin() {
   document.getElementById('register-fields').style.display = 'none';
@@ -438,10 +509,6 @@ function showLogin() {
   resetEmail = '';
   resetVerified = false;
 }
-
-/* =========== FORGOT PASSWORD =========== */
-let resetEmail = '';
-let resetVerified = false;
 
 function showForgotPassword() {
   document.getElementById('login-fields').style.display = 'none';
@@ -523,94 +590,6 @@ async function resetPassword() {
   } catch (e) {
     errEl.textContent = 'Connection error';
   }
-}
-
-function nextToDetails() {
-  const email = document.getElementById('reg-email').value;
-  document.getElementById('register-error').textContent = '';
-  if (!email) { document.getElementById('register-error').textContent = 'Email required'; return; }
-  regEmail = email;
-  document.getElementById('register-email-step').style.display = 'none';
-  document.getElementById('register-details-step').style.display = 'block';
-  document.getElementById('register-step-text').textContent = 'Step 2: Choose your username and password';
-}
-
-async function register() {
-  const username = document.getElementById('reg-username').value;
-  const password = document.getElementById('reg-password').value;
-  const phone = document.getElementById('reg-phone').value.replace(/\s/g, '');
-  const restaurantName = document.getElementById('reg-restaurant-name').value;
-  const errEl = document.getElementById('register-error');
-  errEl.textContent = '';
-  if (!username || !password) { errEl.textContent = 'Username and password required'; return; }
-  if (!phone || !/^\d{7,15}$/.test(phone)) { errEl.textContent = 'Valid phone number required'; return; }
-
-  try {
-    const res = await fetch('/api/v1/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password, email: regEmail, phone, restaurantName: restaurantName || undefined })
-    });
-    const data = await res.json();
-    if (!res.ok) { errEl.textContent = data.error; return; }
-    document.getElementById('register-details-step').style.display = 'none';
-    document.getElementById('register-code-step').style.display = 'block';
-    document.getElementById('register-step-text').textContent = 'Step 3: Enter the confirmation code sent to your email';
-  } catch (e) {
-    errEl.textContent = 'Connection error';
-  }
-}
-
-async function verifyAndLogin() {
-  const code = document.getElementById('reg-code').value;
-  const errEl = document.getElementById('register-error');
-  errEl.textContent = '';
-  if (!code) { errEl.textContent = 'Code required'; return; }
-
-  try {
-    const res = await fetch('/api/v1/auth/verify-and-login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: regEmail, code })
-    });
-    const data = await res.json();
-    if (!res.ok) { errEl.textContent = data.error; return; }
-    jwtToken = data.token;
-    localStorage.setItem('jwt_token', jwtToken);
-    restaurantId = data.restaurantId;
-    prevOrderCount = 0;
-    document.getElementById('login-page').style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
-    showView('dashboard');
-  } catch (e) {
-    errEl.textContent = 'Connection error';
-  }
-}
-
-async function resendOtp() {
-  const btn = document.querySelector('.resend-btn');
-  const statusEl = document.getElementById('resend-status');
-  btn.disabled = true;
-  statusEl.textContent = 'Sending...';
-
-  try {
-    const res = await fetch('/api/v1/auth/resend-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: regEmail })
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      statusEl.textContent = data.error;
-      btn.disabled = false;
-      return;
-    }
-    statusEl.textContent = 'Code resent! Check your email.';
-    setTimeout(() => { statusEl.textContent = ''; }, 4000);
-  } catch (e) {
-    statusEl.textContent = 'Connection error';
-  }
-  btn.disabled = false;
 }
 
 let pollInterval = null;
@@ -1114,61 +1093,145 @@ async function renderSettings() {
 
     main.innerHTML = `
       <div class="page-header"><h2>Settings</h2></div>
-      <div class="card">
-        <h3>Restaurant Name</h3>
-        <div class="settings-group">
-          <label>Restaurant Name</label>
-          <input type="text" id="restaurant-name" value="${safeName}">
-        </div>
-        <div class="settings-group" style="margin-top:1rem">
-          <label>Name Image (take photo of your restaurant name board)</label>
-          <input type="file" id="name-image-input" accept="image/*" capture="environment" onchange="previewNameImage(event)">
-          <div id="name-image-preview" style="margin-top:0.5rem;position:relative;${existingNameImage ? '' : 'display:none'}">
-            <img id="name-image-preview-img" src="${existingNameImage}" style="max-width:100%;max-height:150px;border-radius:6px;object-fit:contain;background:repeating-conic-gradient(#ccc 0% 25%,#fff 0% 50%) 50%/16px 16px">
-            <button class="btn-sm btn-pill-danger" onclick="clearNameImage()" style="position:absolute;top:4px;right:4px">&#10005;</button>
+      <div class="settings-layout">
+
+        <div class="settings-section">
+          <div class="settings-section-header">
+            <span class="settings-section-icon">&#127860;</span>
+            <div>
+              <h3>Restaurant</h3>
+              <p>Manage your restaurant name and branding</p>
+            </div>
           </div>
-          <div id="name-image-processing" style="display:none;margin-top:0.5rem;color:var(--text-muted);font-size:0.85rem">Processing image...</div>
+          <div class="settings-section-body">
+            <div class="settings-group">
+              <label>Restaurant Name</label>
+              <input type="text" id="restaurant-name" value="${safeName}">
+            </div>
+            <div class="settings-group">
+              <label>Name Image</label>
+              <p class="settings-hint">Take a photo of your restaurant name board</p>
+              <div class="settings-name-image-row">
+                <input type="file" id="name-image-input" accept="image/*" capture="environment" onchange="previewNameImage(event)">
+                <button onclick="updateSettings()" class="btn">Save Name</button>
+              </div>
+              <div id="name-image-preview" style="margin-top:0.5rem;position:relative;${existingNameImage ? '' : 'display:none'}">
+                <img id="name-image-preview-img" src="${existingNameImage}" style="max-width:100%;max-height:150px;border-radius:6px;object-fit:contain;background:repeating-conic-gradient(#ccc 0% 25%,#fff 0% 50%) 50%/16px 16px">
+                <button class="btn-sm btn-pill-danger" onclick="clearNameImage()" style="position:absolute;top:4px;right:4px">&#10005;</button>
+              </div>
+              <div id="name-image-processing" style="display:none;margin-top:0.5rem;color:var(--text-muted);font-size:0.85rem">Processing image...</div>
+            </div>
+            <hr class="settings-divider">
+            <div class="settings-inline-row">
+              <div>
+                <label style="font-weight:500;font-size:0.85rem;color:var(--label)">Restaurant ID</label>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-top:0.2rem" id="restaurant-id-display">${settings.id}</p>
+              </div>
+              <button class="btn btn-secondary" onclick="window.open('/customer/menu.html?restaurant=' + document.getElementById('restaurant-id-display').textContent, '_blank')">Open Menu</button>
+            </div>
+          </div>
         </div>
-        <button onclick="updateSettings()">Save Name</button>
-      </div>
-      <div class="card" id="restaurant-id-card">
-        <h3>Restaurant ID</h3>
-        <p style="color:#888;font-size:0.9rem" id="restaurant-id-display">${settings.id}</p>
-      </div>
-      <div class="card">
-        <h3>Visit Menu</h3>
-        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.75rem">Open your restaurant's customer menu page</p>
-        <button onclick="window.open('/customer/menu.html?restaurant=' + document.getElementById('restaurant-id-display').textContent, '_blank')">Open Menu</button>
-      </div>
-      <div class="card">
-        <h3>Reset Orders</h3>
-        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.75rem">Delete all orders for your restaurant</p>
-        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
-          <button class="btn btn-pill-danger" onclick="resetTodayOrders()">Reset Today's Orders</button>
-          <button class="btn btn-pill-danger" onclick="resetAllOrders()">Reset All Orders</button>
+
+        <div class="settings-section">
+          <div class="settings-section-header">
+            <span class="settings-section-icon">&#128274;</span>
+            <div>
+              <h3>Account</h3>
+              <p>Update your password</p>
+            </div>
+          </div>
+          <div class="settings-section-body">
+            <div class="settings-group">
+              <label>Current Password</label>
+              <input type="password" id="owner-current-pw" placeholder="Enter current password">
+            </div>
+            <div class="settings-group">
+              <label>New Password (min 6 characters)</label>
+              <input type="password" id="owner-new-pw" placeholder="Enter new password">
+            </div>
+            <button onclick="changeOwnerPassword()" class="btn">Change Password</button>
+            <div id="owner-pw-result" style="margin-top:0.5rem;font-size:0.85rem"></div>
+          </div>
         </div>
-      </div>
-      <div class="card">
-        <h3>Theme</h3>
-        <div class="theme-toggle">
-          <span class="pill" id="theme-light" onclick="setTheme('light')">Light</span>
-          <span class="pill" id="theme-dark" onclick="setTheme('dark')">Dark</span>
+
+        <div class="settings-section">
+          <div class="settings-section-header">
+            <span class="settings-section-icon">&#128220;</span>
+            <div>
+              <h3>Orders</h3>
+              <p>Manage and reset orders</p>
+            </div>
+          </div>
+          <div class="settings-section-body">
+            <div class="settings-inline-row">
+              <div>
+                <label style="font-weight:500;font-size:0.85rem;color:var(--label)">Today's Orders</label>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-top:0.2rem">Delete all orders placed today</p>
+              </div>
+              <button class="btn btn-pill-danger" onclick="resetTodayOrders()">Reset Today</button>
+            </div>
+            <hr class="settings-divider">
+            <div class="settings-inline-row">
+              <div>
+                <label style="font-weight:500;font-size:0.85rem;color:var(--label)">All Orders</label>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-top:0.2rem">Delete every order permanently</p>
+              </div>
+              <button class="btn btn-pill-danger" onclick="resetAllOrders()">Reset All</button>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="card">
-        <h3>Connections</h3>
-        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.75rem">Connect Swiggy and Zomato to receive orders directly</p>
-        <button onclick="showView('connections')">Go to Connections</button>
-      </div>
-      <div class="card qr-section">
-        <h3>Table QR Codes</h3>
-        <p style="color:#888;font-size:0.85rem;margin-bottom:0.5rem">Print these and place on each table</p>
-        <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:1rem;justify-content:center">
-          <label style="font-size:0.9rem;color:#555">Number of tables:</label>
-          <input type="number" id="table-count" value="6" min="1" max="50" style="width:70px;padding:0.4rem;border:1px solid #ddd;border-radius:4px;text-align:center">
-          <button class="btn-sm" onclick="generateTableQRs()">Generate</button>
+
+        <div class="settings-section">
+          <div class="settings-section-header">
+            <span class="settings-section-icon">&#127912;</span>
+            <div>
+              <h3>Appearance</h3>
+              <p>Switch between light and dark mode</p>
+            </div>
+          </div>
+          <div class="settings-section-body">
+            <div class="theme-toggle">
+              <span class="pill" id="theme-light" onclick="setTheme('light')">Light</span>
+              <span class="pill" id="theme-dark" onclick="setTheme('dark')">Dark</span>
+            </div>
+          </div>
         </div>
-        <div class="qr-grid" id="qr-grid"></div>
+
+        <div class="settings-section">
+          <div class="settings-section-header">
+            <span class="settings-section-icon">&#128279;</span>
+            <div>
+              <h3>Connections</h3>
+              <p>Connect Swiggy and Zomato</p>
+            </div>
+          </div>
+          <div class="settings-section-body">
+            <p class="settings-hint">Connect your delivery platforms to receive orders directly in your dashboard.</p>
+            <button onclick="showView('connections')" class="btn">Go to Connections</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-header">
+            <span class="settings-section-icon">&#128241;</span>
+            <div>
+              <h3>Table QR Codes</h3>
+              <p>Generate QR codes for each table</p>
+            </div>
+          </div>
+          <div class="settings-section-body">
+            <p class="settings-hint">Print these and place them on each table so customers can scan to view the menu.</p>
+            <div class="settings-inline-row">
+              <label style="font-weight:500;color:var(--label)">Number of tables:</label>
+              <div class="settings-input-group">
+                <input type="number" id="table-count" value="6" min="1" max="50">
+                <button class="btn-sm" onclick="generateTableQRs()">Generate</button>
+              </div>
+            </div>
+            <div class="qr-grid" id="qr-grid"></div>
+          </div>
+        </div>
+
       </div>
     `;
 
@@ -1186,15 +1249,6 @@ async function generateTableQRs() {
   if (!ridEl) return;
   const restaurantId = ridEl.textContent;
   if (!restaurantId) return;
-
-  // Get network-accessible URL for QR codes
-  if (serverBaseUrl === location.origin) {
-    try {
-      const res = await fetch('/api/server/info');
-      const info = await res.json();
-      if (info.localUrl) serverBaseUrl = info.localUrl;
-    } catch (e) {}
-  }
 
   const count = parseInt(document.getElementById('table-count')?.value) || 6;
   const grid = document.getElementById('qr-grid');
@@ -1321,6 +1375,38 @@ async function changePassword() {
   } catch (e) {
     msgEl.textContent = 'Connection error';
     msgEl.style.color = '#e74c3c';
+  }
+}
+
+async function changeOwnerPassword() {
+  const currentPassword = document.getElementById('owner-current-pw').value;
+  const newPassword = document.getElementById('owner-new-pw').value;
+  const result = document.getElementById('owner-pw-result');
+  if (!currentPassword || !newPassword) {
+    result.style.color = '#e74c3c';
+    result.textContent = 'Both fields are required';
+    return;
+  }
+  if (newPassword.length < 6) {
+    result.style.color = '#e74c3c';
+    result.textContent = 'New password must be at least 6 characters';
+    return;
+  }
+  try {
+    const res = await authFetch('/api/v1/auth/change-password', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to change password');
+    result.style.color = '#27ae60';
+    result.textContent = 'Password changed successfully';
+    document.getElementById('owner-current-pw').value = '';
+    document.getElementById('owner-new-pw').value = '';
+  } catch (err) {
+    result.style.color = '#e74c3c';
+    result.textContent = err.message;
   }
 }
 

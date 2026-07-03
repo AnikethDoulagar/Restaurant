@@ -14,6 +14,7 @@ const qrRoutes = require('./routes/qr');
 const serverRoutes = require('./routes/server');
 const v1AuthRoutes = require('./routes/v1/auth');
 const v1AdminRoutes = require('./routes/v1/admin');
+const v1SidebarRoutes = require('./routes/v1/sidebar');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -48,6 +49,7 @@ app.use('/api/qr', qrRoutes);
 app.use('/api/server', serverRoutes);
 app.use('/api/v1/auth', v1AuthRoutes);
 app.use('/api/v1/admin', v1AdminRoutes);
+app.use('/api/v1/sidebar', v1SidebarRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });

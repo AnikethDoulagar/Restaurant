@@ -66,6 +66,28 @@ CREATE TABLE IF NOT EXISTS order_items (
   FOREIGN KEY (restaurant_id) REFERENCES restaurants(id)
 );
 
+CREATE TABLE IF NOT EXISTS sidebar_links (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  restaurant_id TEXT NOT NULL,
+  label TEXT NOT NULL,
+  icon TEXT DEFAULT '',
+  link_type TEXT NOT NULL DEFAULT 'view',
+  link_value TEXT NOT NULL,
+  sort_order INTEGER DEFAULT 0,
+  enabled INTEGER DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (restaurant_id) REFERENCES restaurants(id)
+);
+
+CREATE TABLE IF NOT EXISTS registration_codes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,
+  used INTEGER DEFAULT 0,
+  used_by INTEGER DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (used_by) REFERENCES owners(id)
+);
+
 -- Indexes for multi-tenant queries
 CREATE INDEX IF NOT EXISTS idx_menu_items_restaurant ON menu_items(restaurant_id);
 CREATE INDEX IF NOT EXISTS idx_orders_restaurant ON orders(restaurant_id);
