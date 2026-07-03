@@ -84,6 +84,7 @@ router.delete('/owners/:id', requireJwt, requireSuperAdmin, (req, res) => {
     if (!owner) return res.status(404).json({ error: 'Owner not found' });
     if (owner.role === 'super_admin') return res.status(403).json({ error: 'Cannot delete a super admin' });
 
+    db.prepare('DELETE FROM registration_codes WHERE used_by = ?').run(ownerId);
     db.prepare('DELETE FROM owners WHERE id = ?').run(ownerId);
     res.json({ success: true, deleted: owner.username });
   } catch (err) {
