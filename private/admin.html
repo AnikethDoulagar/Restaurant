@@ -91,26 +91,12 @@ input::placeholder{color:#444}
 <body>
 
 <div class="login-page" id="login-page">
-  <div class="login-card" id="login-card">
+  <div class="login-card">
     <h1>Super Admin Login</h1>
     <div class="error" id="login-error"></div>
-    <div id="login-step-code">
-      <p style="text-align:center;color:#888;font-size:.9rem;margin-bottom:1rem">Enter login code</p>
-      <input type="text" id="login-code" placeholder="Code">
-      <button onclick="loginWithCode()">Login</button>
-    </div>
-    <div id="login-step-totp" style="display:none">
-      <div id="totp-setup-area" style="display:none;text-align:center">
-        <p style="color:#888;font-size:.9rem;margin-bottom:1rem">Scan this QR with Google Authenticator or similar app, then enter the 6-digit code below</p>
-        <img id="totp-qr" src="" style="max-width:180px;margin:0 auto 1rem;display:block;border-radius:8px">
-        <p style="font-size:.75rem;color:#555;word-break:break-all;margin-bottom:1rem" id="totp-secret-text"></p>
-      </div>
-      <div id="totp-verify-area">
-        <p style="text-align:center;color:#888;font-size:.9rem;margin-bottom:1rem" id="totp-prompt">Enter the 6-digit code from your authenticator app</p>
-        <input type="text" id="totp-code" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
-        <button id="totp-submit-btn" onclick="verifyTotp()">Verify</button>
-      </div>
-    </div>
+    <p style="text-align:center;color:#888;font-size:.9rem;margin-bottom:1rem">Enter login code</p>
+    <input type="text" id="login-code" placeholder="Code">
+    <button onclick="loginWithCode()">Login</button>
   </div>
 </div>
 
@@ -122,7 +108,6 @@ input::placeholder{color:#444}
     <nav>
       <a data-view="dashboard" class="active" onclick="showView('dashboard')">Dashboard</a>
       <a data-view="owners" onclick="showView('owners')">Manage Owners</a>
-      <a data-view="sidebar" onclick="showView('sidebar')">Sidebar Menu</a>
       <a onclick="window.open('/', '_blank')">Owner Dashboard</a>
       <a onclick="fetch('/api/v1/admin/restaurants/stats').then(r=>r.json()).then(d=>{if(d.length)window.open('/customer/menu.html?restaurant='+d[0].id,'_blank')}).catch(()=>window.open('/customer/menu.html','_blank'))">Customer Menu</a>
     </nav>
@@ -146,6 +131,7 @@ input::placeholder{color:#444}
 var jwtToken = localStorage.getItem('admin_jwt_token') || null;
 var currentView = null;
 var dashboardBuilt = false;
+var ownersBuilt = false;
 
 function getAuthHeaders() {
   var headers = {};
@@ -179,28 +165,6 @@ function checkAuth() {
     });
 }
 
-var tempToken = null;
-
-function showTotpStep(data) {
-  document.getElementById('login-step-code').style.display = 'none';
-  document.getElementById('login-step-totp').style.display = 'block';
-  document.getElementById('login-card').querySelector('h1').textContent = 'Two-Factor Authentication';
-  document.getElementById('login-error').textContent = '';
-  document.getElementById('totp-code').value = '';
-  tempToken = data.tempToken;
-
-  if (data.step === 'setup') {
-    document.getElementById('totp-setup-area').style.display = 'block';
-    document.getElementById('totp-prompt').textContent = 'After scanning, enter the 6-digit code';
-    if (data.qrCode) document.getElementById('totp-qr').src = data.qrCode;
-    document.getElementById('totp-secret-text').textContent = 'Secret: ' + (data.secret || '');
-  } else {
-    document.getElementById('totp-setup-area').style.display = 'none';
-    document.getElementById('totp-prompt').textContent = 'Enter the 6-digit code from your authenticator app';
-  }
-  document.getElementById('totp-code').focus();
-}
-
 function loginWithCode() {
   var code = document.getElementById('login-code').value;
   var errEl = document.getElementById('login-error');
@@ -215,10 +179,6 @@ function loginWithCode() {
   .then(function(r){return r.json()})
   .then(function(data){
     if (data.error) { errEl.textContent = data.error; return; }
-    if (data.step === 'setup' || data.step === 'verify') {
-      showTotpStep(data);
-      return;
-    }
     jwtToken = data.token;
     localStorage.setItem('admin_jwt_token', jwtToken);
     document.getElementById('login-page').style.display = 'none';
@@ -226,39 +186,6 @@ function loginWithCode() {
     showView('dashboard');
   })
   .catch(function(){
-    errEl.textContent = 'Connection error';
-  });
-}
-
-function verifyTotp() {
-  var code = document.getElementById('totp-code').value;
-  var errEl = document.getElementById('login-error');
-  errEl.textContent = '';
-  if (!code || code.length !== 6) { errEl.textContent = 'Enter the 6-digit code'; return; }
-
-  var btn = document.getElementById('totp-submit-btn');
-  btn.disabled = true;
-  btn.textContent = 'Verifying...';
-
-  fetch('/api/v1/admin/verify-totp', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tempToken: tempToken, code: code })
-  })
-  .then(function(r){return r.json()})
-  .then(function(data){
-    btn.disabled = false;
-    btn.textContent = 'Verify';
-    if (data.error) { errEl.textContent = data.error; return; }
-    jwtToken = data.token;
-    localStorage.setItem('admin_jwt_token', jwtToken);
-    document.getElementById('login-page').style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
-    showView('dashboard');
-  })
-  .catch(function(){
-    btn.disabled = false;
-    btn.textContent = 'Verify';
     errEl.textContent = 'Connection error';
   });
 }
@@ -266,15 +193,11 @@ function verifyTotp() {
 function logout() {
   stopPolling();
   jwtToken = null;
-  tempToken = null;
   dashboardBuilt = false;
   ownersBuilt = false;
   localStorage.removeItem('admin_jwt_token');
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-page').style.display = 'flex';
-  document.getElementById('login-card').querySelector('h1').textContent = 'Super Admin Login';
-  document.getElementById('login-step-code').style.display = 'block';
-  document.getElementById('login-step-totp').style.display = 'none';
   document.getElementById('login-code').value = '';
   document.getElementById('login-error').textContent = '';
 }
@@ -307,15 +230,14 @@ function showView(view) {
   if (view === 'owners') viewRestaurantId = null;
   currentView = view;
   if (view === 'dashboard') {
-    renderDashboard();
+    if (!dashboardBuilt) { renderDashboard(); }
+    else { updateDashboard(); }
     startPolling('dashboard');
   }
   else if (view === 'owners') {
-    renderOwners();
+    if (!document.getElementById('owners-table-wrap')) { renderOwners(); }
+    else { updateOwners(); }
     startPolling('owners');
-  }
-  else if (view === 'sidebar') {
-    renderSidebarMenu();
   }
 }
 
@@ -356,51 +278,9 @@ function renderDashboard() {
     '<div class="card" style="margin-top:1rem">' +
       '<h3>Restaurants Overview</h3>' +
       '<div id="dash-rest-list"></div>' +
-    '</div>' +
-    '<div class="card">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">' +
-        '<h3 style="margin:0">Registration Codes</h3>' +
-        '<button onclick="generateRegCode()">+ Generate Code</button>' +
-      '</div>' +
-      '<p style="color:#888;font-size:.85rem;margin-bottom:.75rem">Give these codes to restaurant owners so they can register. Each code works once.</p>' +
-      '<div id="reg-codes-list"><div class="loading-state">Loading...</div></div>' +
     '</div>';
   dashboardBuilt = true;
   updateDashboard();
-}
-
-function generateRegCode() {
-  authFetch('/api/v1/admin/registration-codes', { method: 'POST' })
-    .then(function(r){return r.json()})
-    .then(function(data){
-      if (data.error) { showToast(data.error, true); return; }
-      showToast('Code generated: ' + data.code);
-      loadRegCodes();
-    })
-    .catch(function(){showToast('Error generating code', true)});
-}
-
-function loadRegCodes() {
-  authFetch('/api/v1/admin/registration-codes')
-    .then(function(r){return r.json()})
-    .then(function(codes){
-      var html = codes.length === 0 ? '<div class="empty-state">No codes generated yet</div>' :
-        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem">' +
-        codes.map(function(c){
-          var status = c.used ? '<span style="color:#e74c3c">Used</span>' : '<span style="color:#2ecc71">Available</span>';
-          return '<div style="background:#000;border:1px solid #222;border-radius:6px;padding:.75rem;display:flex;justify-content:space-between;align-items:center">' +
-            '<div><strong style="font-family:monospace;font-size:1rem;user-select:all">' + c.code + '</strong><br><span style="font-size:.75rem;color:#888">' + status + '</span></div>' +
-            '<button class="btn-sm btn-secondary" onclick="navigator.clipboard.writeText(\'' + c.code + '\');showToast(\'Copied!\')">Copy</button>' +
-          '</div>';
-        }).join('') +
-        '</div>';
-      var el = document.getElementById('reg-codes-list');
-      if (el) el.innerHTML = html;
-    })
-    .catch(function(){
-      var el = document.getElementById('reg-codes-list');
-      if (el) el.innerHTML = '<div class="empty-state">Error loading codes</div>';
-    });
 }
 
 function updateDashboard() {
@@ -437,7 +317,6 @@ function updateDashboard() {
       '</div>';
     });
     document.getElementById('dash-rest-list').innerHTML = stats.length === 0 ? '<div class="empty-state">No restaurants yet</div>' : listHtml;
-    loadRegCodes();
   })
   .catch(function(){
     document.getElementById('dash-rest-list').innerHTML = '<div class="empty-state">Error loading data</div>';
@@ -461,6 +340,7 @@ function renderOwners() {
         '<div class="stat-item"><div class="val" id="own-total-customers">0</div><div class="lbl">Total Customers</div></div>' +
       '</div>' +
     '</div>';
+  ownersBuilt = true;
   updateOwners();
 }
 
@@ -562,18 +442,13 @@ function addOwner() {
 function deleteOwner(id, username) {
   if (!confirm('Delete owner "' + username + '"? This cannot be undone.')) return;
   authFetch('/api/v1/admin/owners/' + id, { method: 'DELETE' })
-    .then(function(r) {
-      if (!r.ok) {
-        return r.json().then(function(d) { throw new Error(d.error || 'Request failed'); })
-          .catch(function() { return r.text().then(function(t) { throw new Error(t || 'Server error'); }); });
-      }
-      return r.json();
-    })
-    .then(function(data) {
+    .then(function(r){return r.json()})
+    .then(function(data){
+      if (data.error) { showToast(data.error, true); return; }
       showToast('Deleted ' + username);
       renderOwners();
     })
-    .catch(function(e) { showToast(e.message || 'Error deleting owner', true); });
+    .catch(function(){showToast('Error deleting owner', true)});
 }
 
 function showResetPasswordModal(id, username) {
@@ -686,188 +561,6 @@ function updateOwnerView() {
   .catch(function(){
     document.getElementById('ov-orders-list').innerHTML = '<div class="empty-state">Error loading data</div>';
     document.getElementById('ov-menu-list').innerHTML = '<div class="empty-state">Error loading data</div>';
-  });
-}
-
-/* =========== SIDEBAR MENU =========== */
-var sidebarLinks = [];
-
-function renderSidebarMenu() {
-  var main = document.getElementById('main-content');
-  main.innerHTML = '<div class="page-header"><h2>Sidebar Menu Editor</h2></div><div class="loading-state">Loading...</div>';
-
-  authFetch('/api/v1/admin/owners')
-    .then(function(r){return r.json()})
-    .then(function(owners){
-      var ownerOptions = '';
-      var firstRid = '';
-      owners.forEach(function(o){
-        if (o.role !== 'super_admin') {
-          if (!firstRid) firstRid = o.restaurant_id;
-          ownerOptions += '<option value="' + o.restaurant_id + '">' + (o.restaurant_name || o.restaurant_id) + ' (' + o.username + ')</option>';
-        }
-      });
-
-      main.innerHTML =
-        '<div class="page-header"><h2>Sidebar Menu Editor</h2></div>' +
-        '<div class="card">' +
-          '<label style="display:block;margin-bottom:.5rem;color:#888">Select Restaurant</label>' +
-          '<select id="sidebar-restaurant-select" style="width:100%;padding:.6rem;border:1px solid #222;border-radius:6px;font-size:.95rem;background:#000;color:#e0e0e0;margin-bottom:1rem" onchange="loadSidebarLinks()">' + ownerOptions + '</select>' +
-          '<div id="sidebar-links-list"></div>' +
-          '<button onclick="addSidebarLink()" style="margin-top:1rem">+ Add Link</button>' +
-          '<button onclick="saveSidebarLinks()" style="margin-top:1rem;margin-left:.5rem;background:#2dce89">Save Changes</button>' +
-        '</div>';
-
-      if (firstRid) loadSidebarLinks();
-    })
-    .catch(function(){
-      main.innerHTML = '<div class="page-header"><h2>Sidebar Menu Editor</h2></div><div class="empty-state">Error loading owners</div>';
-    });
-}
-
-function loadSidebarLinks() {
-  var rid = document.getElementById('sidebar-restaurant-select').value;
-  if (!rid) return;
-  var list = document.getElementById('sidebar-links-list');
-  list.innerHTML = '<div class="loading-state">Loading...</div>';
-
-  authFetch('/api/v1/sidebar?restaurantId=' + rid)
-    .then(function(r){return r.json()})
-    .then(function(links){
-      sidebarLinks = links;
-      renderLinkList();
-    })
-    .catch(function(){
-      list.innerHTML = '<div class="empty-state">Error loading links</div>';
-    });
-}
-
-function renderLinkList() {
-  var list = document.getElementById('sidebar-links-list');
-  if (!sidebarLinks.length) {
-    list.innerHTML = '<div class="empty-state" style="padding:1rem">No custom links yet. Add your first link below.</div>';
-    return;
-  }
-  var html = '<div style="display:flex;flex-direction:column;gap:.5rem">';
-  sidebarLinks.forEach(function(link, i){
-    var icon = link.icon || '🔗';
-    html +=
-      '<div style="display:flex;align-items:center;gap:.5rem;padding:.6rem;background:#000;border-radius:6px;border:1px solid #1a1a1a" data-idx="' + i + '">' +
-        '<span style="cursor:grab;color:#555" onclick="moveLink(' + i + ',-1)">&#x25B2;</span>' +
-        '<span style="cursor:grab;color:#555" onclick="moveLink(' + i + ',1)">&#x25BC;</span>' +
-        '<span>' + icon + '</span>' +
-        '<span style="flex:1;color:#e0e0e0">' + link.label + '</span>' +
-        '<span style="font-size:.8rem;color:#666">' + (link.link_type === 'url' ? link.link_value : 'view: ' + link.link_value) + '</span>' +
-        '<span style="font-size:.75rem;color:' + (link.enabled ? '#2dce89' : '#e74c3c') + '">' + (link.enabled ? 'ON' : 'OFF') + '</span>' +
-        '<button class="btn-sm" onclick="editSidebarLink(' + i + ')">Edit</button>' +
-        '<button class="btn-sm btn-danger" onclick="deleteSidebarLink(' + i + ')">X</button>' +
-      '</div>';
-  });
-  html += '</div>';
-  list.innerHTML = html;
-}
-
-function moveLink(idx, dir) {
-  var newIdx = idx + dir;
-  if (newIdx < 0 || newIdx >= sidebarLinks.length) return;
-  var temp = sidebarLinks[idx];
-  sidebarLinks[idx] = sidebarLinks[newIdx];
-  sidebarLinks[newIdx] = temp;
-  renderLinkList();
-}
-
-function addSidebarLink() {
-  sidebarLinks.push({
-    id: null, restaurant_id: document.getElementById('sidebar-restaurant-select').value,
-    label: 'New Link', icon: '', link_type: 'view', link_value: '', sort_order: sidebarLinks.length, enabled: 1
-  });
-  renderLinkList();
-  editSidebarLink(sidebarLinks.length - 1);
-}
-
-function editSidebarLink(idx) {
-  var link = sidebarLinks[idx];
-  var isView = link.link_type === 'view';
-  showModal(
-    '<h3>Edit Link</h3>' +
-    '<label>Label</label><input type="text" id="edit-label" value="' + link.label.replace(/"/g,'&quot;') + '">' +
-    '<label>Icon (emoji or URL)</label><input type="text" id="edit-icon" value="' + (link.icon || '').replace(/"/g,'&quot;') + '" placeholder="e.g. 🍕 or /uploads/icon.png">' +
-    '<label>Type</label><select id="edit-type" onchange="var v=this.value===\'url\';document.getElementById(\'edit-value-wrap\').style.display=v?\'\':\'none\';document.getElementById(\'edit-view-wrap\').style.display=v?\'none\':\'\'">' +
-      '<option value="view"' + (isView ? ' selected' : '') + '>Internal View</option>' +
-      '<option value="url"' + (!isView ? ' selected' : '') + '>External URL</option>' +
-    '</select>' +
-    '<div id="edit-value-wrap" style="display:' + (isView ? 'none' : '') + '">' +
-      '<label>URL</label><input type="text" id="edit-url" value="' + (isView ? '' : (link.link_value || '')).replace(/"/g,'&quot;') + '" placeholder="https://...">' +
-    '</div>' +
-    '<div id="edit-view-wrap" style="display:' + (isView ? '' : 'none') + '">' +
-      '<label>View Name</label><select id="edit-view">' +
-        '<option value="dashboard"' + (link.link_value === 'dashboard' ? ' selected' : '') + '>Dashboard</option>' +
-        '<option value="orders"' + (link.link_value === 'orders' ? ' selected' : '') + '>Orders</option>' +
-        '<option value="menu"' + (link.link_value === 'menu' ? ' selected' : '') + '>Menu</option>' +
-        '<option value="settings"' + (link.link_value === 'settings' ? ' selected' : '') + '>Settings</option>' +
-      '</select>' +
-    '</div>' +
-    '<label>Enabled</label><input type="checkbox" id="edit-enabled"' + (link.enabled ? ' checked' : '') + '>' +
-    '<div class="modal-actions"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button onclick="saveLinkEdit(' + idx + ')">Save</button></div>'
-  );
-}
-
-function saveLinkEdit(idx) {
-  var link = sidebarLinks[idx];
-  link.label = document.getElementById('edit-label').value;
-  link.icon = document.getElementById('edit-icon').value;
-  link.link_type = document.getElementById('edit-type').value;
-  if (link.link_type === 'view') {
-    link.link_value = document.getElementById('edit-view').value;
-  } else {
-    link.link_value = document.getElementById('edit-url').value;
-  }
-  link.enabled = document.getElementById('edit-enabled').checked ? 1 : 0;
-  closeModal();
-  renderLinkList();
-}
-
-function deleteSidebarLink(idx) {
-  if (!confirm('Delete "' + sidebarLinks[idx].label + '"?')) return;
-  sidebarLinks.splice(idx, 1);
-  renderLinkList();
-}
-
-function saveSidebarLinks() {
-  var btn = document.querySelector('#sidebar-links-list').parentElement.querySelector('button:last-child');
-  btn.disabled = true;
-  btn.textContent = 'Saving...';
-
-  var rid = document.getElementById('sidebar-restaurant-select').value;
-  var data = sidebarLinks.map(function(l){
-    return {
-      label: l.label,
-      icon: l.icon,
-      link_type: l.link_type,
-      link_value: l.link_value,
-      enabled: l.enabled
-    };
-  });
-
-  var errEl = document.getElementById('login-error');
-
-  authFetch('/api/v1/sidebar', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ restaurantId: rid, links: data })
-  })
-  .then(function(r){return r.json()})
-  .then(function(saved){
-    sidebarLinks = saved;
-    renderLinkList();
-    btn.disabled = false;
-    btn.textContent = 'Save Changes';
-    showToast('Sidebar menu saved!');
-  })
-  .catch(function(){
-    btn.disabled = false;
-    btn.textContent = 'Save Changes';
-    showToast('Error saving', true);
   });
 }
 
