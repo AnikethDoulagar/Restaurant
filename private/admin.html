@@ -442,13 +442,18 @@ function addOwner() {
 function deleteOwner(id, username) {
   if (!confirm('Delete owner "' + username + '"? This cannot be undone.')) return;
   authFetch('/api/v1/admin/owners/' + id, { method: 'DELETE' })
-    .then(function(r){return r.json()})
-    .then(function(data){
-      if (data.error) { showToast(data.error, true); return; }
+    .then(function(r) {
+      if (!r.ok) {
+        return r.json().then(function(d) { throw new Error(d.error || 'Request failed'); })
+          .catch(function() { return r.text().then(function(t) { throw new Error(t || 'Server error'); }); });
+      }
+      return r.json();
+    })
+    .then(function(data) {
       showToast('Deleted ' + username);
       renderOwners();
     })
-    .catch(function(){showToast('Error deleting owner', true)});
+    .catch(function(e) { showToast(e.message || 'Error deleting owner', true); });
 }
 
 function showResetPasswordModal(id, username) {
