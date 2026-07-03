@@ -17,6 +17,9 @@ function requireJwt(req, res, next) {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.jwt = decoded;
+    if (req.jwt.role === 'super_admin' && req.query.restaurant_id) {
+      req.jwt.restaurantId = req.query.restaurant_id;
+    }
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Invalid or expired token' });

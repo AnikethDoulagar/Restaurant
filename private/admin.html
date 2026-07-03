@@ -110,7 +110,6 @@ input::placeholder{color:#444}
       <a data-view="owners" onclick="showView('owners')">Manage Owners</a>
       <a data-view="codes" onclick="showView('codes')">Reg Codes</a>
       <a onclick="window.open('/', '_blank')">Owner Dashboard</a>
-      <a onclick="fetch('/api/v1/admin/restaurants/stats').then(r=>r.json()).then(d=>{if(d.length)window.open('/customer/menu.html?restaurant='+d[0].id,'_blank')}).catch(()=>window.open('/customer/menu.html','_blank'))">Customer Menu</a>
     </nav>
     <div class="spacer"></div>
     <a class="logout-btn" onclick="logout()">Logout</a>
@@ -382,7 +381,8 @@ function updateOwners() {
           '<td>' + (s ? s.totalCustomers : '0') + '</td>' +
           '<td>' + (s ? s.menuItems : '0') + '</td>' +
           '<td style="white-space:nowrap">' +
-            '<button class="btn-sm" onclick="showOwnerView(\'' + o.restaurant_id + '\',\'' + (o.restaurant_name || o.restaurant_id) + '\')">View</button> ' +
+            '<button class="btn-sm" onclick="window.open(\'/?restaurant_id=' + o.restaurant_id + '&token=\' + jwtToken, \'_blank\')">Dashboard</button> ' +
+            '<button class="btn-sm" onclick="showOwnerView(\'' + o.restaurant_id + '\',\'' + (o.restaurant_name || o.restaurant_id) + '\')">Orders</button> ' +
             '<button class="btn-sm" onclick="showResetPasswordModal(' + o.id + ',\'' + o.username + '\')">Reset PW</button> ' +
             '<button class="btn-sm btn-danger" onclick="deleteOwner(' + o.id + ',\'' + o.username + '\')">Delete</button>' +
           '</td></tr>';

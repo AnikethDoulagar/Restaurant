@@ -325,6 +325,9 @@
 
 <script>
 let restaurantId = null;
+const urlParams = new URLSearchParams(window.location.search);
+const urlToken = urlParams.get('token');
+if (urlToken) localStorage.setItem('jwt_token', urlToken);
 let jwtToken = localStorage.getItem('jwt_token') || null;
 let adminPath = '/admin';
 
@@ -395,7 +398,8 @@ function buildSidebar(isSuperAdmin) {
 async function checkAuth() {
   if (!jwtToken) return;
   try {
-    const res = await authFetch('/api/v1/auth/verify');
+    const viewRestaurant = urlParams.get('restaurant_id');
+    const res = await authFetch('/api/v1/auth/verify' + (viewRestaurant ? '?restaurant_id=' + viewRestaurant : ''));
     const data = await res.json();
     if (data.authenticated) {
       restaurantId = data.restaurantId;

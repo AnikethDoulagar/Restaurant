@@ -41,10 +41,11 @@ router.post('/login', (req, res) => {
 });
 
 router.get('/verify', requireJwt, (req, res) => {
+  const rid = req.query.restaurant_id || req.jwt.restaurantId;
   res.json({
     authenticated: true,
     role: req.jwt.role,
-    restaurantId: req.jwt.restaurantId,
+    restaurantId: rid,
     username: req.jwt.username
   });
 });
