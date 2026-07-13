@@ -29,6 +29,8 @@ function init() {
   try { db.exec("ALTER TABLE registration_codes ADD COLUMN used_by INTEGER DEFAULT NULL"); } catch (e) {}
   try { db.exec("ALTER TABLE registration_codes ADD COLUMN used_at DATETIME DEFAULT NULL"); } catch (e) {}
   try { db.exec("ALTER TABLE app_config ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP"); } catch (e) {}
+  try { db.exec("ALTER TABLE orders ADD COLUMN customer_phone TEXT DEFAULT ''"); } catch (e) {}
+  try { db.exec("ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT ''"); } catch (e) {}
 
   // Migrate old category names to new ones from Bash India
   db.exec("UPDATE menu_items SET category = 'Appetizers' WHERE category = 'Starters'");

@@ -47,6 +47,8 @@ CREATE TABLE IF NOT EXISTS orders (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   restaurant_id TEXT NOT NULL,
   customer_name TEXT NOT NULL DEFAULT 'Guest',
+  customer_phone TEXT DEFAULT '',
+  payment_method TEXT DEFAULT '',
   table_number INTEGER DEFAULT NULL,
   status TEXT NOT NULL DEFAULT 'pending',
   total REAL NOT NULL DEFAULT 0,

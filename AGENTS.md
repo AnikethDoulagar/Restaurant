@@ -23,6 +23,10 @@
 3. Update service: `aws ecs update-service --cluster default --service restaurants_interface-9565 --task-definition default-restaurants_interface-9565:<rev> --force-new-deployment`
 4. Canary deployment (3 min bake) takes ~5 min to roll out
 
+## What Was Fixed (Jul 13 2026)
+
+- **KOT system**: Kitchen Order Ticket generation with Socket.IO integration. New tables: `app_config` (sequence counter), `kot_history`. Routes: `GET /api/kot/:orderId`, `GET /api/kot/history/:restaurantId`. Task def `:38`, image tag `20260713-210753`.
+
 ## What Was Fixed (Jul 3 2026)
 
 - **Owner delete failing**: `registration_codes.used_by` FK constraint blocked deletion. Fix: delete registration codes referencing the owner before deleting the owner row.

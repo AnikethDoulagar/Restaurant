@@ -217,7 +217,13 @@
     </div>
   </div>
   <div class="panel-footer" id="panel-footer" style="display:none">
-    <input type="text" id="customer-name" placeholder="Your name (optional)">
+    <input type="text" id="customer-name" placeholder="Your name *">
+    <input type="tel" id="customer-phone" placeholder="Phone number *" inputmode="numeric" maxlength="15">
+    <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">
+      <button class="pay-btn pay-active" id="pay-cash" onclick="selectPay('Cash')" style="flex:1;padding:0.6rem;border-radius:8px;border:2px solid var(--orange);background:rgba(230,126,34,0.15);color:var(--orange);font-weight:600;font-size:0.9rem;cursor:pointer">Cash</button>
+      <button class="pay-btn" id="pay-upi" onclick="selectPay('UPI')" style="flex:1;padding:0.6rem;border-radius:8px;border:2px solid #333;background:#1a1a1a;color:#888;font-weight:600;font-size:0.9rem;cursor:pointer">UPI</button>
+    </div>
+    <input type="hidden" id="payment-method" value="Cash">
     <button class="place-order-btn" onclick="showConfirm()">Place Order</button>
   </div>
 </div>
@@ -485,9 +491,26 @@ function toggleCart() {
   overlay.classList.toggle('show');
 }
 
+function selectPay(method) {
+  document.getElementById('payment-method').value = method;
+  document.getElementById('pay-cash').style.borderColor = method === 'Cash' ? 'var(--orange)' : '#333';
+  document.getElementById('pay-cash').style.color = method === 'Cash' ? 'var(--orange)' : '#888';
+  document.getElementById('pay-cash').style.background = method === 'Cash' ? 'rgba(230,126,34,0.15)' : '#1a1a1a';
+  document.getElementById('pay-upi').style.borderColor = method === 'UPI' ? 'var(--orange)' : '#333';
+  document.getElementById('pay-upi').style.color = method === 'UPI' ? 'var(--orange)' : '#888';
+  document.getElementById('pay-upi').style.background = method === 'UPI' ? 'rgba(230,126,34,0.15)' : '#1a1a1a';
+}
+
 function showConfirm() {
   if (Object.keys(cart).length === 0) return;
   var name = document.getElementById('customer-name').value.trim();
+  var phone = document.getElementById('customer-phone').value.trim();
+  var payMethod = document.getElementById('payment-method').value;
+
+  if (!name) { showToast('Please enter your name'); return; }
+  if (!phone || !/^\d{7,15}$/.test(phone)) { showToast('Please enter a valid phone number'); return; }
+  if (!payMethod) { showToast('Please select a payment method'); return; }
+
   var total = 0;
   var html = '';
   for (var id in cart) {
@@ -499,7 +522,7 @@ function showConfirm() {
     html += '<div class="confirm-item"><span>' + item.name + ' x' + qty + '</span><span>&#8377;' + lineTotal.toFixed(2) + '</span></div>';
   }
   var sub = document.getElementById('confirm-sub');
-  sub.textContent = tableNumber ? 'Table ' + tableNumber + (name ? ' - ' + name : '') : (name || 'Guest');
+  sub.textContent = (tableNumber ? 'Table ' + tableNumber : (name || 'Guest')) + ' \u2022 ' + payMethod;
   document.getElementById('confirm-items').innerHTML = html;
   document.getElementById('confirm-total').textContent = total.toFixed(2);
   document.getElementById('confirm-overlay').classList.add('open');
@@ -511,6 +534,8 @@ function closeConfirm() {
 
 async function confirmOrder() {
   var name = document.getElementById('customer-name').value.trim();
+  var phone = document.getElementById('customer-phone').value.trim();
+  var payMethod = document.getElementById('payment-method').value;
   var orderItems = Object.entries(cart).map(function(e) {
     return { menuItemId: parseInt(e[0]), quantity: e[1] };
   });
@@ -519,7 +544,7 @@ async function confirmOrder() {
     var res = await fetch('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ restaurantId: restaurantId, customerName: name, tableNumber: tableNumber, items: orderItems })
+      body: JSON.stringify({ restaurantId: restaurantId, customerName: name, customerPhone: phone, paymentMethod: payMethod, tableNumber: tableNumber, items: orderItems })
     });
     if (!res.ok) throw new Error('Order failed');
     var order = await res.json();
@@ -529,6 +554,7 @@ async function confirmOrder() {
     toggleCart();
     showToast('Order placed! #' + order.id);
     document.getElementById('customer-name').value = '';
+    document.getElementById('customer-phone').value = '';
   } catch (e) {
     showToast('Error placing order');
   }

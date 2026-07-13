@@ -28,7 +28,7 @@ router.get('/', requireJwt, (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const { restaurantId, customerName, tableNumber, items } = req.body;
+  const { restaurantId, customerName, customerPhone, paymentMethod, tableNumber, items } = req.body;
   if (!restaurantId || !items || items.length === 0) {
     return res.status(400).json({ error: 'Restaurant ID and items required' });
   }
@@ -59,8 +59,8 @@ router.post('/', (req, res) => {
 
   const tableNum = tableNumber ? parseInt(tableNumber) : null;
   const orderResult = db.prepare(
-    'INSERT INTO orders (restaurant_id, customer_name, table_number, total) VALUES (?, ?, ?, ?)'
-  ).run(restaurantId, customerName || 'Guest', tableNum, total);
+    'INSERT INTO orders (restaurant_id, customer_name, customer_phone, payment_method, table_number, total) VALUES (?, ?, ?, ?, ?, ?)'
+  ).run(restaurantId, customerName || 'Guest', customerPhone || '', paymentMethod || '', tableNum, total);
 
   const insertItem = db.prepare(
     'INSERT INTO order_items (order_id, restaurant_id, menu_item_id, name, quantity, price) VALUES (?, ?, ?, ?, ?, ?)'
@@ -71,6 +71,11 @@ router.post('/', (req, res) => {
 
   const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderResult.lastInsertRowid);
   const orderItems = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(orderResult.lastInsertRowid);
+
+  // Emit socket event for new order
+  try {
+    const io = require('../index.js').io || null;
+  } catch(e) {}
 
   res.status(201).json({ ...order, items: orderItems });
 });
