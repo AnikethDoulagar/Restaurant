@@ -674,8 +674,9 @@ function dashboardHTML(pending, active, menuCount, revenue, orders) {
               </div>
               <div class="items">${(o.items || []).map(i => `${i.name} x${i.quantity}`).join(', ')}</div>
               <div class="total">₹${o.total.toFixed(2)}</div>
+              <button class="btn-sm btn-pill" onclick="showKOT(${o.id})" style="background:rgba(0,0,0,0.65)!important;color:#fff!important;margin-top:4px">KOT</button>
             </div>
-          `).join('')}<button class="btn-sm btn-pill" onclick="showKOT(${o.id})" style="background:rgba(0,0,0,0.65)!important;color:#fff!important;margin-left:4px">KOT</button><button class="btn-sm btn-pill" onclick="showKOT(${o.id})" style="background:rgba(0,0,0,0.65)!important;color:#fff!important;margin-left:4px">KOT</button>
+          `).join('')}
         ${orders.length > 5 ? '<div style="text-align:center;margin-top:0.5rem"><a href="#" onclick="showView(\'orders\');return false">View all orders</a></div>' : ''}
       </div>
     </div>
