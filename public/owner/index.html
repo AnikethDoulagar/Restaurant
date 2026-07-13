@@ -831,7 +831,7 @@ async function refreshOrders() {
   finally { isRendering = false; }
 }
 
-async function showKOT(orderId) { try { var r = await authFetch("/api/kot/" + orderId); if (!r.ok) { showToast("KOT error", true); return; } var k = await r.json(); window._kc = k.content; showModal("<div style="font-family:monospace;font-size:12px;white-space:pre-wrap;background:#f9f9f9;padding:15px;border-radius:6px;color:#000;max-height:70vh;overflow:auto">" + k.content.replace(/\n/g, "<br>") + "</div><div class="modal-actions"><button onclick="closeModal()">Close</button><button onclick="printKOT()">Print</button></div>"); } catch (e) { showToast("KOT error", true); } }
+async function showKOT(orderId) { try { var r = await authFetch("/api/kot/" + orderId); if (!r.ok) { showToast("KOT error", true); return; } var k = await r.json(); window._kc = k.content; showModal('<div style="font-family:monospace;font-size:12px;white-space:pre-wrap;background:#f9f9f9;padding:15px;border-radius:6px;color:#000;max-height:70vh;overflow:auto">' + k.content.replace(/\n/g, "<br>") + '</div><div class="modal-actions"><button onclick="closeModal()">Close</button><button onclick="printKOT()">Print</button></div>'); } catch (e) { showToast("KOT error", true); } }
 function printKOT() { if (!window._kc) return; var w = window.open("", "", "width=400,height=600"); w.document.write("<html><head><style>body{font:12px monospace;padding:10px;white-space:pre}</style></head><body>" + window._kc.replace(/\n/g, "<br>") + "</body></html>"); w.document.close(); w.print(); }
 
 async function updateOrderStatus(orderId, status) {
