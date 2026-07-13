@@ -270,12 +270,11 @@
 
 <div class="welcome-overlay" id="welcome-overlay">
   <div class="welcome-card">
-    <h2>Welcome! &#128075;</h2>
+    <h2 id="welcome-heading">Welcome! &#128075;</h2>
     <div class="sub">Tell us who you are so we can serve you better</div>
     <input type="text" id="welcome-name" placeholder="Your name *">
     <input type="tel" id="welcome-phone" placeholder="Phone number *" inputmode="numeric" maxlength="15">
     <button onclick="submitWelcome()">Continue to Menu</button>
-    <button class="skip-link" onclick="skipWelcome()">Skip for now</button>
   </div>
 </div>
 
@@ -331,10 +330,6 @@ function submitWelcome() {
   showToast('Welcome, ' + name + '!');
 }
 
-function skipWelcome() {
-  document.getElementById('welcome-overlay').classList.add('hidden');
-}
-
 function editDetails() {
   var overlay = document.getElementById('welcome-overlay');
   overlay.classList.remove('hidden');
@@ -358,6 +353,7 @@ async function loadMenu() {
     } else {
       nameEl.textContent = data.restaurant.name;
     }
+    document.getElementById('welcome-heading').textContent = 'Welcome to ' + data.restaurant.name + '! \uD83D\uDC4B';
     if (tableNumber) {
       document.getElementById('table-number').textContent = tableNumber;
       document.getElementById('table-badge').style.display = 'inline-flex';

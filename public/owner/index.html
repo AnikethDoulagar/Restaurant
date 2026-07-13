@@ -79,6 +79,8 @@
   .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
   .btn-pill { border-radius: 999px !important; background: rgba(230,126,34,0.2) !important; color: #e67e22 !important; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); border: 1px solid rgba(230,126,34,0.25) !important; padding: 0.3rem 0.9rem !important; transition: all 0.2s !important; }
   .btn-pill:hover { background: rgba(230,126,34,0.35) !important; }
+  .btn-kot { border-radius: 999px !important; background: rgba(41,128,185,0.25) !important; color: #3498db !important; border: 1px solid rgba(41,128,185,0.35) !important; padding: 0.3rem 0.9rem !important; font-size: 0.78rem !important; font-weight: 600 !important; transition: all 0.2s !important; cursor: pointer !important; }
+  .btn-kot:hover { background: rgba(41,128,185,0.4) !important; }
   .btn-pill-danger { border-radius: 999px !important; background: rgba(231,76,60,0.2) !important; color: #e74c3c !important; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); border: 1px solid rgba(231,76,60,0.25) !important; padding: 0.3rem 0.9rem !important; transition: all 0.2s !important; }
   .btn-pill-danger:hover { background: rgba(231,76,60,0.35) !important; }
   .btn-order-status { border-radius: 999px !important; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); border: 1px solid !important; padding: 0.3rem 0.9rem !important; font-size: 0.78rem !important; transition: all 0.2s !important; }
@@ -676,7 +678,7 @@ function dashboardHTML(pending, active, menuCount, revenue, orders) {
               </div>
               <div class="items">${(o.items || []).map(i => `${i.name} x${i.quantity}`).join(', ')}</div>
               <div class="total">₹${o.total.toFixed(2)}</div>
-              <button class="btn-sm btn-pill" onclick="showKOT(${o.id})" style="background:rgba(0,0,0,0.65)!important;color:#fff!important;margin-top:4px">KOT</button>
+              <button class="btn-sm btn-kot" onclick="showKOT(${o.id})">KOT</button>
             </div>
           `).join('')}
         ${orders.length > 5 ? '<div style="text-align:center;margin-top:0.5rem"><a href="#" onclick="showView(\'orders\');return false">View all orders</a></div>' : ''}
@@ -782,7 +784,7 @@ function ordersHTML(orders) {
             ${['preparing','ready','delivered','cancelled'].filter(s => s !== o.status).map(s =>
               `<button class="btn-sm btn-order-status btn-order-${s}" onclick="updateOrderStatus(${o.id}, '${s}')">${s}</button>`
             ).join('')}
-            <button class="btn-sm btn-pill" onclick="showKOT(${o.id})" style="background:rgba(0,0,0,0.65)!important;color:#fff!important">KOT</button>
+            <button class="btn-sm btn-kot" onclick="showKOT(${o.id})">KOT</button>
           </div>
         </div>
       `).join('')}</div>`}
@@ -832,7 +834,7 @@ async function refreshOrders() {
             ${['preparing','ready','delivered','cancelled'].filter(s => s !== o.status).map(s =>
               `<button class="btn-sm btn-order-status btn-order-${s}" onclick="updateOrderStatus(${o.id}, '${s}')">${s}</button>`
             ).join('')}
-            <button class="btn-sm btn-pill" onclick="showKOT(${o.id})" style="background:rgba(0,0,0,0.65)!important;color:#fff!important">KOT</button>
+            <button class="btn-sm btn-kot" onclick="showKOT(${o.id})">KOT</button>
           </div>
         </div>
       `).join('');
@@ -1445,6 +1447,65 @@ async function renderSettings() {
 
         <div class="settings-section">
           <div class="settings-section-header">
+            <span class="settings-section-icon">&#128172;</span>
+            <div>
+              <h3>WhatsApp Business API</h3>
+              <p>Send order notifications and e-bills to customers</p>
+            </div>
+          </div>
+          <div class="settings-section-body">
+            <div class="settings-inline-row" style="margin-bottom:1.25rem">
+              <div>
+                <label style="font-weight:500;font-size:0.85rem;color:var(--label)">Enable WhatsApp</label>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-top:0.2rem">Send messages when orders are placed</p>
+              </div>
+              <span class="pill" id="wa-enabled-pill" onclick="toggleWhatsApp()" style="cursor:pointer;padding:0.4rem 1rem;border-radius:20px;border:1px solid var(--border);background:var(--card-bg);color:var(--text);font-size:0.85rem;font-weight:500;transition:all 0.2s">Off</span>
+            </div>
+            <div id="whatsapp-fields">
+              <div class="settings-group">
+                <label>API Provider</label>
+                <select id="wa-api-url" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px;font-size:0.95rem;background:var(--input-bg);color:var(--text);max-width:400px">
+                  <option value="">Select provider...</option>
+                  <option value="https://graph.facebook.com/v19.0">Meta WhatsApp Cloud API</option>
+                  <option value="https://api.twilio.com/2010-04-01">Twilio WhatsApp API</option>
+                  <option value="https://api.gupshup.io/wa">Gupshup WhatsApp API</option>
+                  <option value="custom">Custom API URL</option>
+                </select>
+              </div>
+              <div class="settings-group" id="wa-custom-url-group" style="display:none">
+                <label>Custom API URL</label>
+                <input type="url" id="wa-custom-url" placeholder="https://your-api.example.com/v1">
+              </div>
+              <div class="settings-group">
+                <label>API Key / Token</label>
+                <input type="password" id="wa-api-key" placeholder="Enter your API key or access token">
+              </div>
+              <div class="settings-group">
+                <label>Phone Number ID</label>
+                <input type="text" id="wa-phone-id" placeholder="e.g., 1234567890">
+                <p class="settings-hint">Found in your WhatsApp Business dashboard</p>
+              </div>
+              <div class="settings-group">
+                <label>Business Phone Number</label>
+                <input type="tel" id="wa-business-phone" placeholder="+91 98765 43210" inputmode="tel">
+                <p class="settings-hint">Your WhatsApp Business phone number with country code</p>
+              </div>
+              <div class="settings-group">
+                <label>Webhook Verify Token</label>
+                <input type="text" id="wa-verify-token" placeholder="Your secret verify token">
+                <p class="settings-hint">Set this in your WhatsApp Business webhook configuration</p>
+              </div>
+              <div style="display:flex;gap:0.5rem;align-items:center;margin-top:1.25rem">
+                <button onclick="saveWhatsApp()" class="btn">Save WhatsApp Settings</button>
+                <button onclick="testWhatsApp()" class="btn btn-secondary" id="wa-test-btn">Test Connection</button>
+              </div>
+              <div id="wa-result" style="margin-top:0.5rem;font-size:0.85rem"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-header">
             <span class="settings-section-icon">&#128279;</span>
             <div>
               <h3>Connections</h3>
@@ -1482,6 +1543,7 @@ async function renderSettings() {
     `;
 
     generateTableQRs();
+    setTimeout(loadWhatsAppConfig, 50);
   } catch (e) {
     console.error('Settings error:', e);
     main.innerHTML = '<div class="empty-state">Error loading settings. Make sure you are logged in.</div>';
@@ -1765,6 +1827,92 @@ async function updateSettings() {
   } catch (e) {
     showToast('Error updating settings', true);
   }
+}
+
+/* =========== WHATSAPP CONFIG =========== */
+let waEnabled = false;
+
+async function loadWhatsAppConfig() {
+  try {
+    const res = await authFetch('/api/restaurant/whatsapp');
+    if (!res.ok) return;
+    const cfg = await res.json();
+    waEnabled = !!cfg.enabled;
+    const pill = document.getElementById('wa-enabled-pill');
+    if (pill) {
+      pill.textContent = waEnabled ? 'On' : 'Off';
+      pill.style.background = waEnabled ? '#27ae60' : 'var(--card-bg)';
+      pill.style.color = waEnabled ? '#fff' : 'var(--text)';
+      pill.style.borderColor = waEnabled ? '#27ae60' : 'var(--border)';
+    }
+    const fields = document.getElementById('whatsapp-fields');
+    if (fields) fields.style.opacity = waEnabled ? '1' : '0.5';
+    if (cfg.api_url) {
+      const sel = document.getElementById('wa-api-url');
+      if (sel) {
+        const opts = Array.from(sel.options).map(o => o.value);
+        if (opts.includes(cfg.api_url)) sel.value = cfg.api_url;
+        else { sel.value = 'custom'; document.getElementById('wa-custom-url-group').style.display = 'block'; document.getElementById('wa-custom-url').value = cfg.api_url; }
+      }
+    }
+    if (cfg.api_key) document.getElementById('wa-api-key').value = cfg.api_key;
+    if (cfg.phone_number_id) document.getElementById('wa-phone-id').value = cfg.phone_number_id;
+    if (cfg.business_phone) document.getElementById('wa-business-phone').value = cfg.business_phone;
+    if (cfg.verify_token) document.getElementById('wa-verify-token').value = cfg.verify_token;
+  } catch (e) {}
+  const apiSel = document.getElementById('wa-api-url');
+  if (apiSel) apiSel.addEventListener('change', function() {
+    document.getElementById('wa-custom-url-group').style.display = this.value === 'custom' ? 'block' : 'none';
+  });
+}
+
+function toggleWhatsApp() {
+  waEnabled = !waEnabled;
+  const pill = document.getElementById('wa-enabled-pill');
+  pill.textContent = waEnabled ? 'On' : 'Off';
+  pill.style.background = waEnabled ? '#27ae60' : 'var(--card-bg)';
+  pill.style.color = waEnabled ? '#fff' : 'var(--text)';
+  pill.style.borderColor = waEnabled ? '#27ae60' : 'var(--border)';
+  document.getElementById('whatsapp-fields').style.opacity = waEnabled ? '1' : '0.5';
+}
+
+async function saveWhatsApp() {
+  const apiSel = document.getElementById('wa-api-url');
+  let apiUrl = apiSel.value;
+  if (apiUrl === 'custom') apiUrl = document.getElementById('wa-custom-url').value.trim();
+  const apiKey = document.getElementById('wa-api-key').value.trim();
+  const phoneId = document.getElementById('wa-phone-id').value.trim();
+  const bizPhone = document.getElementById('wa-business-phone').value.trim();
+  const verifyToken = document.getElementById('wa-verify-token').value.trim();
+  try {
+    const res = await authFetch('/api/restaurant/whatsapp', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: waEnabled, api_url: apiUrl, api_key: apiKey, phone_number_id: phoneId, business_phone: bizPhone, verify_token: verifyToken })
+    });
+    if (!res.ok) throw new Error();
+    showToast('WhatsApp settings saved');
+  } catch (e) {
+    showToast('Error saving WhatsApp settings', true);
+  }
+}
+
+async function testWhatsApp() {
+  const btn = document.getElementById('wa-test-btn');
+  const result = document.getElementById('wa-result');
+  btn.textContent = 'Testing...';
+  btn.disabled = true;
+  try {
+    const res = await authFetch('/api/restaurant/whatsapp/test', { method: 'POST' });
+    const data = await res.json();
+    result.style.color = data.success ? '#27ae60' : '#e74c3c';
+    result.textContent = data.success ? 'Connection successful!' : (data.error || 'Connection failed');
+  } catch (e) {
+    result.style.color = '#e74c3c';
+    result.textContent = 'Test failed: ' + e.message;
+  }
+  btn.textContent = 'Test Connection';
+  btn.disabled = false;
 }
 
 /* =========== THEME =========== */

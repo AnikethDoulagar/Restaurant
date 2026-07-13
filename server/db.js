@@ -31,6 +31,7 @@ function init() {
   try { db.exec("ALTER TABLE app_config ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP"); } catch (e) {}
   try { db.exec("ALTER TABLE orders ADD COLUMN customer_phone TEXT DEFAULT ''"); } catch (e) {}
   try { db.exec("ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT ''"); } catch (e) {}
+  try { db.exec("CREATE TABLE IF NOT EXISTS whatsapp_config (restaurant_id TEXT PRIMARY KEY, enabled INTEGER DEFAULT 0, api_url TEXT DEFAULT '', api_key TEXT DEFAULT '', phone_number_id TEXT DEFAULT '', business_phone TEXT DEFAULT '', verify_token TEXT DEFAULT '', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (restaurant_id) REFERENCES restaurants(id))"); } catch (e) {}
 
   // Migrate old category names to new ones from Bash India
   db.exec("UPDATE menu_items SET category = 'Appetizers' WHERE category = 'Starters'");

@@ -107,6 +107,19 @@ CREATE TABLE IF NOT EXISTS registration_codes (
   FOREIGN KEY (used_by) REFERENCES owners(id)
 );
 
+CREATE TABLE IF NOT EXISTS whatsapp_config (
+  restaurant_id TEXT PRIMARY KEY,
+  enabled INTEGER DEFAULT 0,
+  api_url TEXT DEFAULT '',
+  api_key TEXT DEFAULT '',
+  phone_number_id TEXT DEFAULT '',
+  business_phone TEXT DEFAULT '',
+  verify_token TEXT DEFAULT '',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (restaurant_id) REFERENCES restaurants(id)
+);
+
 -- Indexes for multi-tenant queries
 CREATE INDEX IF NOT EXISTS idx_menu_items_restaurant ON menu_items(restaurant_id);
 CREATE INDEX IF NOT EXISTS idx_orders_restaurant ON orders(restaurant_id);
