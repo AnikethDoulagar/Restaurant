@@ -775,6 +775,7 @@ function ordersHTML(orders) {
             ${['preparing','ready','delivered','cancelled'].filter(s => s !== o.status).map(s =>
               `<button class="btn-sm btn-order-status btn-order-${s}" onclick="updateOrderStatus(${o.id}, '${s}')">${s}</button>`
             ).join('')}
+            <button class="btn-sm btn-pill" onclick="showKOT(${o.id})" style="background:rgba(0,0,0,0.65)!important;color:#fff!important">KOT</button>
           </div>
         </div>
       `).join('')}</div>`}
@@ -819,6 +820,7 @@ async function refreshOrders() {
             ${['preparing','ready','delivered','cancelled'].filter(s => s !== o.status).map(s =>
               `<button class="btn-sm btn-order-status btn-order-${s}" onclick="updateOrderStatus(${o.id}, '${s}')">${s}</button>`
             ).join('')}
+            <button class="btn-sm btn-pill" onclick="showKOT(${o.id})" style="background:rgba(0,0,0,0.65)!important;color:#fff!important">KOT</button>
           </div>
         </div>
       `).join('');
