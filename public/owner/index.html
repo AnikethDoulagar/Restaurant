@@ -217,6 +217,7 @@
     }
     .qr-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
     .settings-group input { max-width: 100%; }
+    .po-page-grid { grid-template-columns: 1fr !important; }
     .toast { left: 1rem; right: 1rem; bottom: 1rem; text-align: center; border-radius: 10px; }
     .login-card { padding: 1.5rem; }
     .hamburger { display: flex !important; align-items: center; justify-content: center; width: 44px; height: 44px; background: none; border: none; color: var(--text); font-size: 1.5rem; cursor: pointer; position: fixed; top: max(0.5rem, env(safe-area-inset-top, 0)); left: max(0.5rem, env(safe-area-inset-left, 0)); z-index: 20; background: var(--card-bg); border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -352,6 +353,7 @@ function buildSidebar(isSuperAdmin) {
   const nav = document.getElementById('sidebar-nav');
   nav.innerHTML =
     '<a class="active" onclick="showView(\'dashboard\')" data-view="dashboard">\u{1F4CA} <span>Dashboard</span></a>' +
+    '<a onclick="showView(\'place-order\')" data-view="place-order">\u{1F4CB} <span>Place Order</span></a>' +
     '<a onclick="showView(\'orders\')" data-view="orders">\u{1F4E6} <span>Orders</span></a>' +
     '<a onclick="showView(\'menu\')" data-view="menu">\u{1F372} <span>Menu</span></a>' +
     '<a onclick="showView(\'settings\')" data-view="settings">\u{2699}\u{FE0F} <span>Settings</span></a>';
@@ -641,6 +643,7 @@ function showView(view) {
   stopPolling();
   if (_socket) _socket.on('new_' + restaurantId, function(o) { showToast('New order #' + o.id); var v = document.querySelector('.sidebar .active')?.dataset?.view; if (v === 'orders') refreshOrders(); else if (v === 'dashboard') renderDashboard(); });
   if (view === 'dashboard') { renderDashboard(); startPolling(); }
+  else if (view === 'place-order') renderPlaceOrder();
   else if (view === 'orders') { renderOrders(); startPolling(); }
   else if (view === 'menu') renderMenu();
   else if (view === 'settings') renderSettings();
@@ -749,6 +752,7 @@ async function refreshDashboard() {
             </div>
             <div class="items">${(o.items || []).map(i => `${i.name} x${i.quantity}`).join(', ')}</div>
             <div class="total">₹${o.total.toFixed(2)}</div>
+            <button class="btn-sm btn-kot" onclick="showKOT(${o.id})">KOT</button>
           </div>
         `).join('') + (orders.length > 5 ? '<div style="text-align:center;margin-top:0.5rem"><a href="#" onclick="showView(\'orders\');return false">View all orders</a></div>' : '');
       if (ordersContainer.innerHTML !== newHTML) ordersContainer.innerHTML = newHTML;
@@ -760,7 +764,7 @@ async function refreshDashboard() {
 /* =========== ORDERS =========== */
 function ordersHTML(orders) {
   return `
-    <div class="page-header"><h2>Orders</h2><button class="btn" onclick="showPlaceOrder()">+ Place Order</button></div>
+    <div class="page-header"><h2>Orders</h2></div>
     ${orders.length === 0 ? '<div class="empty-state">No orders yet</div>' :
       `<div id="orders-list">${orders.map(o => `
         <div class="order-card" data-order-id="${o.id}">
@@ -869,90 +873,154 @@ async function updateOrderStatus(orderId, status) {
 let ownerCart = {};
 let ownerMenuData = null;
 
-async function showPlaceOrder() {
+async function renderPlaceOrder() {
+  const main = document.getElementById('main-content');
+  main.innerHTML = '<div class="loading-state">Loading menu...</div>';
   try {
     const res = await authFetch('/api/menu');
     ownerMenuData = await res.json();
     ownerCart = {};
-    renderPlaceOrderModal();
+    renderPlaceOrderPage();
   } catch (e) {
-    showToast('Error loading menu', true);
+    main.innerHTML = '<div class="empty-state">Error loading menu</div>';
   }
 }
 
-function renderPlaceOrderModal() {
+function renderPlaceOrderPage() {
+  const main = document.getElementById('main-content');
   const items = ownerMenuData || [];
   const grouped = {};
   items.forEach(i => { if (!grouped[i.category]) grouped[i.category] = []; grouped[i.category].push(i); });
 
-  let html = '<h3>Place Order for Customer</h3>';
-  html += '<label>Customer Name *</label><input type="text" id="po-name" placeholder="Customer name">';
-  html += '<label>Phone Number *</label><input type="tel" id="po-phone" placeholder="Phone number" inputmode="numeric">';
-  html += '<label>Table Number</label><input type="number" id="po-table" placeholder="Table number (optional)" min="1">';
-  html += '<label>Payment Method *</label><div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">';
-  html += '<button type="button" class="btn-sm btn-pill po-pay po-pay-active" onclick="selectOwnerPay(\'Cash\')" style="flex:1">Cash</button>';
-  html += '<button type="button" class="btn-sm btn-pill po-pay" onclick="selectOwnerPay(\'UPI\')" style="flex:1">UPI</button>';
-  html += '</div><input type="hidden" id="po-payment" value="Cash">';
-  html += '<label>Add Items *</label>';
-
-  for (const cat of Object.keys(grouped)) {
-    html += '<div style="font-weight:600;font-size:0.85rem;color:var(--text-muted);margin:0.5rem 0 0.25rem">' + cat + '</div>';
-    for (const item of grouped[cat]) {
-      const qty = ownerCart[item.id] || 0;
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid var(--border-light)">';
-      html += '<span style="font-size:0.9rem">' + item.name + ' <span style="color:var(--text-muted)">₹' + item.price.toFixed(0) + '</span></span>';
-      if (qty > 0) {
-        html += '<div class="qty-control" style="background:#e67e22"><button onclick="ownerDec(' + item.id + ')">-</button><span>' + qty + '</span><button onclick="ownerAdd(' + item.id + ')">+</button></div>';
-      } else {
-        html += '<button class="btn-sm btn-pill" onclick="ownerAdd(' + item.id + ')">+</button>';
-      }
-      html += '</div>';
-    }
+  let total = 0;
+  let cartCount = 0;
+  for (const id in ownerCart) {
+    const item = items.find(i => i.id == id);
+    if (item) { total += item.price * ownerCart[id]; cartCount += ownerCart[id]; }
   }
 
-  html += '<div id="po-cart-total" style="font-weight:700;text-align:right;margin:0.75rem 0;font-size:1.1rem;color:#e67e22">₹0.00</div>';
-  html += '<div class="modal-actions"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button onclick="submitOwnerOrder()">Place Order</button></div>';
+  main.innerHTML = `
+    <div class="page-header"><h2>Place Order</h2></div>
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:1rem;align-items:start">
+      <div>
+        <div class="card" style="margin-bottom:1rem">
+          <h3>Customer Details</h3>
+          <div class="settings-group">
+            <label>Phone Number *</label>
+            <input type="tel" id="po-phone" placeholder="Enter customer phone number" inputmode="numeric" maxlength="15" style="max-width:100%">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+            <div class="settings-group">
+              <label>Customer Name</label>
+              <input type="text" id="po-name" placeholder="Optional" style="max-width:100%">
+            </div>
+            <div class="settings-group">
+              <label>Table Number</label>
+              <input type="number" id="po-table" placeholder="Optional" min="1" style="max-width:100%">
+            </div>
+          </div>
+          <div class="settings-group">
+            <label>Payment Method</label>
+            <div style="display:flex;gap:0.5rem">
+              <button type="button" class="btn-sm btn-pill po-pay po-pay-active" onclick="selectOwnerPay('Cash')" id="po-pay-cash" style="flex:1;padding:0.55rem">Cash</button>
+              <button type="button" class="btn-sm btn-pill po-pay" onclick="selectOwnerPay('UPI')" id="po-pay-upi" style="flex:1;padding:0.55rem">UPI</button>
+            </div>
+            <input type="hidden" id="po-payment" value="Cash">
+          </div>
+        </div>
+        <div class="card">
+          <h3>Select Items</h3>
+          <div style="margin-bottom:0.5rem">
+            <input type="text" id="po-search" placeholder="Search items..." oninput="filterPlaceOrderItems()" style="width:100%;padding:0.6rem 0.8rem;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;background:var(--input-bg);color:var(--text)">
+          </div>
+          ${Object.keys(grouped).map(cat => `
+            <div class="po-cat-section" data-cat="${cat}">
+              <div style="font-weight:600;font-size:0.85rem;color:var(--text-muted);padding:0.5rem 0 0.25rem;border-bottom:1px solid var(--border-light)">${cat}</div>
+              ${grouped[cat].map(item => {
+                const qty = ownerCart[item.id] || 0;
+                return `<div class="po-item-row" data-name="${item.name.toLowerCase()}" style="display:flex;align-items:center;justify-content:space-between;padding:0.55rem 0;border-bottom:1px solid var(--border-light)">
+                  <div style="flex:1;min-width:0">
+                    <span style="font-size:0.9rem;font-weight:500">${item.name}</span>
+                    <span style="font-size:0.82rem;color:var(--text-muted);margin-left:0.4rem">₹${item.price.toFixed(0)}</span>
+                  </div>
+                  ${qty > 0
+                    ? `<div class="qty-control" style="background:#e67e22"><button onclick="ownerDec(${item.id})">-</button><span>${qty}</span><button onclick="ownerAdd(${item.id})">+</button></div>`
+                    : `<button class="btn-sm btn-pill" onclick="ownerAdd(${item.id})" style="padding:0.3rem 0.8rem">+</button>`
+                  }
+                </div>`;
+              }).join('')}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div>
+        <div class="card" style="position:sticky;top:80px">
+          <h3 style="margin-bottom:0.5rem">Order Summary</h3>
+          ${cartCount === 0
+            ? '<div style="text-align:center;padding:2rem 1rem;color:var(--text-muted)">No items selected</div>'
+            : `<div style="max-height:350px;overflow-y:auto">
+                ${Object.entries(ownerCart).map(([id, qty]) => {
+                  const item = items.find(i => i.id == id);
+                  if (!item) return '';
+                  return `<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border-light);font-size:0.88rem">
+                    <span>${item.name} x${qty}</span>
+                    <span style="font-weight:600">₹${(item.price * qty).toFixed(0)}</span>
+                  </div>`;
+                }).join('')}
+              </div>`
+          }
+          <div style="display:flex;justify-content:space-between;padding:0.75rem 0 0;font-weight:700;font-size:1.1rem">
+            <span>Total</span>
+            <span style="color:#e67e22">₹${total.toFixed(2)}</span>
+          </div>
+          <button onclick="submitOwnerOrder()" class="btn" style="width:100%;margin-top:0.75rem;padding:0.75rem;font-size:1rem" ${cartCount === 0 ? 'disabled style="width:100%;margin-top:0.75rem;padding:0.75rem;font-size:1rem;opacity:0.5;cursor:not-allowed"' : ''}>Place Order</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
 
-  showModal(html);
-  updateOwnerPayUI();
+function filterPlaceOrderItems() {
+  const q = document.getElementById('po-search')?.value.toLowerCase().trim() || '';
+  document.querySelectorAll('.po-item-row').forEach(el => {
+    el.style.display = el.dataset.name.includes(q) ? 'flex' : 'none';
+  });
+  document.querySelectorAll('.po-cat-section').forEach(sec => {
+    const hasVisible = Array.from(sec.querySelectorAll('.po-item-row')).some(r => r.style.display !== 'none');
+    sec.style.display = hasVisible ? 'block' : 'none';
+  });
 }
 
 function ownerAdd(id) {
   if (!ownerCart[id]) ownerCart[id] = 0;
   ownerCart[id]++;
-  renderPlaceOrderModal();
+  renderPlaceOrderPage();
 }
 
 function ownerDec(id) {
   if (ownerCart[id]) { ownerCart[id]--; if (ownerCart[id] <= 0) delete ownerCart[id]; }
-  renderPlaceOrderModal();
+  renderPlaceOrderPage();
 }
 
 function selectOwnerPay(method) {
   document.getElementById('po-payment').value = method;
-  updateOwnerPayUI();
-}
-
-function updateOwnerPayUI() {
-  const val = document.getElementById('po-payment')?.value || 'Cash';
-  document.querySelectorAll('.po-pay').forEach(b => {
-    const isActive = b.textContent.trim() === val;
-    b.classList.toggle('po-pay-active', isActive);
-    b.style.borderColor = isActive ? '#e67e22' : 'var(--border)';
-    b.style.color = isActive ? '#e67e22' : 'var(--text-muted)';
-    b.style.background = isActive ? 'rgba(230,126,34,0.15)' : 'var(--card-bg)';
-  });
+  document.getElementById('po-pay-cash').style.borderColor = method === 'Cash' ? '#e67e22' : 'var(--border)';
+  document.getElementById('po-pay-cash').style.color = method === 'Cash' ? '#e67e22' : 'var(--text-muted)';
+  document.getElementById('po-pay-cash').style.background = method === 'Cash' ? 'rgba(230,126,34,0.15)' : 'var(--card-bg)';
+  document.getElementById('po-pay-cash').classList.toggle('po-pay-active', method === 'Cash');
+  document.getElementById('po-pay-upi').style.borderColor = method === 'UPI' ? '#e67e22' : 'var(--border)';
+  document.getElementById('po-pay-upi').style.color = method === 'UPI' ? '#e67e22' : 'var(--text-muted)';
+  document.getElementById('po-pay-upi').style.background = method === 'UPI' ? 'rgba(230,126,34,0.15)' : 'var(--card-bg)';
+  document.getElementById('po-pay-upi').classList.toggle('po-pay-active', method === 'UPI');
 }
 
 async function submitOwnerOrder() {
-  const name = document.getElementById('po-name')?.value.trim();
   const phone = document.getElementById('po-phone')?.value.trim();
+  const name = document.getElementById('po-name')?.value.trim() || 'Walk-in Customer';
   const table = document.getElementById('po-table')?.value;
   const payment = document.getElementById('po-payment')?.value;
 
-  if (!name) { showToast('Customer name required', true); return; }
   if (!phone || !/^\d{7,15}$/.test(phone)) { showToast('Valid phone number required', true); return; }
-  if (!payment) { showToast('Payment method required', true); return; }
   if (Object.keys(ownerCart).length === 0) { showToast('Add at least one item', true); return; }
 
   const items = Object.entries(ownerCart).map(([id, qty]) => ({ menuItemId: parseInt(id), quantity: qty }));
@@ -965,9 +1033,9 @@ async function submitOwnerOrder() {
     });
     if (!res.ok) throw new Error();
     const order = await res.json();
-    closeModal();
     showToast('Order #' + order.id + ' placed');
-    refreshOrders();
+    ownerCart = {};
+    renderPlaceOrder();
   } catch (e) {
     showToast('Error placing order', true);
   }
