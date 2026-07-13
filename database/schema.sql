@@ -79,6 +79,23 @@ CREATE TABLE IF NOT EXISTS sidebar_links (
   FOREIGN KEY (restaurant_id) REFERENCES restaurants(id)
 );
 
+CREATE TABLE IF NOT EXISTS app_config (
+  key TEXT PRIMARY KEY,
+  value INTEGER NOT NULL DEFAULT 0,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS kot_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ticket_number TEXT NOT NULL,
+  order_id INTEGER NOT NULL,
+  restaurant_id TEXT NOT NULL,
+  content TEXT NOT NULL,
+  printed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(id),
+  FOREIGN KEY (restaurant_id) REFERENCES restaurants(id)
+);
+
 CREATE TABLE IF NOT EXISTS registration_codes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   code TEXT NOT NULL UNIQUE,

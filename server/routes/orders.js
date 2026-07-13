@@ -4,6 +4,8 @@ const { requireJwt } = require('../middleware/jwt');
 
 const router = express.Router();
 
+function getIO(req) { return req.app.get('io'); }
+
 router.get('/', requireJwt, (req, res) => {
   const orders = db.prepare(
     'SELECT * FROM orders WHERE restaurant_id = ? ORDER BY created_at DESC'

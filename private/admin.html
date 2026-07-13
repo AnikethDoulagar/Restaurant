@@ -109,7 +109,6 @@ input::placeholder{color:#444}
       <a data-view="dashboard" class="active" onclick="showView('dashboard')">Dashboard</a>
       <a data-view="owners" onclick="showView('owners')">Manage Owners</a>
       <a data-view="codes" onclick="showView('codes')">Reg Codes</a>
-      <a onclick="window.open('/', '_blank')">Owner Dashboard</a>
     </nav>
     <div class="spacer"></div>
     <a class="logout-btn" onclick="logout()">Logout</a>
@@ -210,7 +209,8 @@ function startPolling(view) {
     if (view === 'dashboard') updateDashboard();
     else if (view === 'owners') updateOwners();
     else if (view === 'ownerview') updateOwnerView();
-  }, 1000);
+    else if (view === 'codes') updateCodes();
+  }, 3000);
 }
 
 function stopPolling() {
@@ -235,6 +235,7 @@ function showView(view) {
   }
   else if (view === 'codes') {
     renderCodes();
+    startPolling('codes');
   }
 }
 

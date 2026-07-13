@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="/socket.io/socket.io.js"></script>
 <title>Owner Dashboard</title>
 <style>
   :root {
@@ -326,6 +327,7 @@
 <script>
 let restaurantId = null;
 const urlParams = new URLSearchParams(window.location.search);
+let _socket; try { _socket = io(); } catch(e) {}
 const urlToken = urlParams.get('token');
 if (urlToken) localStorage.setItem('jwt_token', urlToken);
 let jwtToken = localStorage.getItem('jwt_token') || null;
@@ -588,6 +590,7 @@ async function resetPassword() {
 
 let pollInterval = null;
 let prevOrderCount = 0;
+let isRendering = false;
 
 function startPolling() {
   stopPolling();
@@ -600,8 +603,8 @@ function startPolling() {
       }
       prevOrderCount = orders.length;
       const activeView = document.querySelector('.sidebar nav a.active')?.dataset?.view;
-      if (activeView === 'dashboard') renderDashboard();
-      else if (activeView === 'orders') renderOrders();
+      if (activeView === 'dashboard') refreshDashboard();
+      else if (activeView === 'orders') refreshOrders();
     } catch (e) {}
   }, 4000);
 }
@@ -632,6 +635,7 @@ function showView(view) {
   document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
   document.querySelector(`.sidebar nav a[data-view="${view}"]`)?.classList.add('active');
   stopPolling();
+  if (_socket) _socket.on('new_' + restaurantId, function(o) { showToast('New order #' + o.id); var v = document.querySelector('.sidebar .active')?.dataset?.view; if (v === 'orders') refreshOrders(); else if (v === 'dashboard') renderDashboard(); });
   if (view === 'dashboard') { renderDashboard(); startPolling(); }
   else if (view === 'orders') { renderOrders(); startPolling(); }
   else if (view === 'menu') renderMenu();
@@ -649,6 +653,35 @@ function showToast(msg, isError) {
 }
 
 /* =========== DASHBOARD =========== */
+function dashboardHTML(pending, active, menuCount, revenue, orders) {
+  return `
+    <div class="page-header"><h2>Dashboard</h2></div>
+    <div class="grid-2">
+      <div class="card stat-card"><div class="num" id="stat-pending">${pending}</div><div class="label">Pending Orders</div></div>
+      <div class="card stat-card"><div class="num" id="stat-active">${active}</div><div class="label">Active Orders</div></div>
+      <div class="card stat-card"><div class="num" id="stat-menu">${menuCount}</div><div class="label">Menu Items</div></div>
+      <div class="card stat-card"><div class="num" id="stat-revenue">₹${revenue.toFixed(2)}</div><div class="label">Today's Revenue</div></div>
+    </div>
+    <div class="card">
+      <h3>Recent Orders</h3>
+      <div id="dashboard-orders">
+        ${orders.length === 0 ? '<div class="empty-state">No orders yet</div>' :
+          orders.slice(0, 5).map(o => `
+            <div class="order-card">
+              <div class="header">
+                <span class="order-id">#${o.id} - ${o.customer_name}${o.table_number ? `<span class="table-badge">Table ${o.table_number}</span>` : ''}</span>
+                <span class="status-badge status-${o.status}">${o.status}</span>
+              </div>
+              <div class="items">${(o.items || []).map(i => `${i.name} x${i.quantity}`).join(', ')}</div>
+              <div class="total">₹${o.total.toFixed(2)}</div>
+            </div>
+          `).join('')}<button class="btn-sm btn-pill" onclick="showKOT(${o.id})" style="background:rgba(0,0,0,0.65)!important;color:#fff!important;margin-left:4px">KOT</button><button class="btn-sm btn-pill" onclick="showKOT(${o.id})" style="background:rgba(0,0,0,0.65)!important;color:#fff!important;margin-left:4px">KOT</button>
+        ${orders.length > 5 ? '<div style="text-align:center;margin-top:0.5rem"><a href="#" onclick="showView(\'orders\');return false">View all orders</a></div>' : ''}
+      </div>
+    </div>
+  `;
+}
+
 async function renderDashboard() {
   const main = document.getElementById('main-content');
   main.innerHTML = '<div class="loading-state">Loading dashboard...</div>';
@@ -669,36 +702,84 @@ async function renderDashboard() {
       .filter(o => o.status !== 'cancelled')
       .reduce((s, o) => s + o.total, 0);
 
-    main.innerHTML = `
-      <div class="page-header"><h2>Dashboard</h2></div>
-      <div class="grid-2">
-        <div class="card stat-card"><div class="num">${pendingOrders.length}</div><div class="label">Pending Orders</div></div>
-        <div class="card stat-card"><div class="num">${activeOrders.length}</div><div class="label">Active Orders</div></div>
-        <div class="card stat-card"><div class="num">${menuItems.length}</div><div class="label">Menu Items</div></div>
-        <div class="card stat-card"><div class="num">₹${todayRevenue.toFixed(2)}</div><div class="label">Today's Revenue</div></div>
-      </div>
-      <div class="card">
-        <h3>Recent Orders</h3>
-        ${orders.length === 0 ? '<div class="empty-state">No orders yet</div>' :
-          orders.slice(0, 5).map(o => `
-            <div class="order-card">
-              <div class="header">
-                <span class="order-id">#${o.id} - ${o.customer_name}${o.table_number ? `<span class="table-badge">Table ${o.table_number}</span>` : ''}</span>
-                <span class="status-badge status-${o.status}">${o.status}</span>
-              </div>
-              <div class="items">${(o.items || []).map(i => `${i.name} x${i.quantity}`).join(', ')}</div>
-              <div class="total">₹${o.total.toFixed(2)}</div>
-            </div>
-          `).join('')}
-        ${orders.length > 5 ? '<div style="text-align:center;margin-top:0.5rem"><a href="#" onclick="showView(\'orders\');return false">View all orders</a></div>' : ''}
-      </div>
-    `;
+    main.innerHTML = dashboardHTML(pendingOrders.length, activeOrders.length, menuItems.length, todayRevenue, orders);
   } catch (e) {
     main.innerHTML = '<div class="empty-state">Error loading dashboard</div>';
   }
 }
 
+async function refreshDashboard() {
+  if (isRendering) return;
+  isRendering = true;
+  try {
+    const [settingsRes, ordersRes, menuRes] = await Promise.all([
+      authFetch('/api/restaurant/settings'),
+      authFetch('/api/orders'),
+      authFetch('/api/menu')
+    ]);
+    const settings = await settingsRes.json();
+    const orders = await ordersRes.json();
+    const menuItems = await menuRes.json();
+
+    const pendingOrders = orders.filter(o => o.status === 'pending');
+    const activeOrders = orders.filter(o => ['confirmed','preparing','ready'].includes(o.status));
+    const todayRevenue = orders
+      .filter(o => o.status !== 'cancelled')
+      .reduce((s, o) => s + o.total, 0);
+
+    const el = (id) => document.getElementById(id);
+    if (el('stat-pending')) el('stat-pending').textContent = pendingOrders.length;
+    if (el('stat-active')) el('stat-active').textContent = activeOrders.length;
+    if (el('stat-menu')) el('stat-menu').textContent = menuItems.length;
+    if (el('stat-revenue')) el('stat-revenue').textContent = '₹' + todayRevenue.toFixed(2);
+
+    const ordersContainer = el('dashboard-orders');
+    if (ordersContainer) {
+      const newHTML = orders.length === 0 ? '<div class="empty-state">No orders yet</div>' :
+        orders.slice(0, 5).map(o => `
+          <div class="order-card">
+            <div class="header">
+              <span class="order-id">#${o.id} - ${o.customer_name}${o.table_number ? `<span class="table-badge">Table ${o.table_number}</span>` : ''}</span>
+              <span class="status-badge status-${o.status}">${o.status}</span>
+            </div>
+            <div class="items">${(o.items || []).map(i => `${i.name} x${i.quantity}`).join(', ')}</div>
+            <div class="total">₹${o.total.toFixed(2)}</div>
+          </div>
+        `).join('') + (orders.length > 5 ? '<div style="text-align:center;margin-top:0.5rem"><a href="#" onclick="showView(\'orders\');return false">View all orders</a></div>' : '');
+      if (ordersContainer.innerHTML !== newHTML) ordersContainer.innerHTML = newHTML;
+    }
+  } catch (e) {}
+  finally { isRendering = false; }
+}
+
 /* =========== ORDERS =========== */
+function ordersHTML(orders) {
+  return `
+    <div class="page-header"><h2>Orders</h2></div>
+    ${orders.length === 0 ? '<div class="empty-state">No orders yet</div>' :
+      `<div id="orders-list">${orders.map(o => `
+        <div class="order-card" data-order-id="${o.id}">
+          <div class="header">
+            <span class="order-id">#${o.id} - ${o.customer_name}${o.table_number ? `<span class="table-badge">Table ${o.table_number}</span>` : ''}</span>
+            <span class="order-time">${new Date(o.created_at).toLocaleString()}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div class="items">${(o.items || []).map(i => `${i.name} x${i.quantity}`).join(', ')}</div>
+              <div class="total">₹${o.total.toFixed(2)}</div>
+            </div>
+            <span class="status-badge status-${o.status}">${o.status}</span>
+          </div>
+          <div class="actions">
+            ${['preparing','ready','delivered','cancelled'].filter(s => s !== o.status).map(s =>
+              `<button class="btn-sm btn-order-status btn-order-${s}" onclick="updateOrderStatus(${o.id}, '${s}')">${s}</button>`
+            ).join('')}
+          </div>
+        </div>
+      `).join('')}</div>`}
+  `;
+}
+
 async function renderOrders() {
   const main = document.getElementById('main-content');
   main.innerHTML = '<div class="loading-state">Loading orders...</div>';
@@ -706,35 +787,51 @@ async function renderOrders() {
   try {
     const res = await authFetch('/api/orders');
     const orders = await res.json();
-
-    main.innerHTML = `
-      <div class="page-header"><h2>Orders</h2></div>
-      ${orders.length === 0 ? '<div class="empty-state">No orders yet</div>' :
-        orders.map(o => `
-          <div class="order-card">
-            <div class="header">
-              <span class="order-id">#${o.id} - ${o.customer_name}${o.table_number ? `<span class="table-badge">Table ${o.table_number}</span>` : ''}</span>
-              <span class="order-time">${new Date(o.created_at).toLocaleString()}</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div>
-                <div class="items">${(o.items || []).map(i => `${i.name} x${i.quantity}`).join(', ')}</div>
-                <div class="total">₹${o.total.toFixed(2)}</div>
-              </div>
-              <span class="status-badge status-${o.status}">${o.status}</span>
-            </div>
-            <div class="actions">
-              ${['preparing','ready','delivered','cancelled'].filter(s => s !== o.status).map(s =>
-                `<button class="btn-sm btn-order-status btn-order-${s}" onclick="updateOrderStatus(${o.id}, '${s}')">${s}</button>`
-              ).join('')}
-            </div>
-          </div>
-        `).join('')}
-    `;
+    main.innerHTML = ordersHTML(orders);
   } catch (e) {
     main.innerHTML = '<div class="empty-state">Error loading orders</div>';
   }
 }
+
+async function refreshOrders() {
+  if (isRendering) return;
+  isRendering = true;
+  try {
+    const res = await authFetch('/api/orders');
+    const orders = await res.json();
+    const container = document.getElementById('orders-list');
+    if (container) {
+      const newHTML = orders.map(o => `
+        <div class="order-card" data-order-id="${o.id}">
+          <div class="header">
+            <span class="order-id">#${o.id} - ${o.customer_name}${o.table_number ? `<span class="table-badge">Table ${o.table_number}</span>` : ''}</span>
+            <span class="order-time">${new Date(o.created_at).toLocaleString()}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div class="items">${(o.items || []).map(i => `${i.name} x${i.quantity}`).join(', ')}</div>
+              <div class="total">₹${o.total.toFixed(2)}</div>
+            </div>
+            <span class="status-badge status-${o.status}">${o.status}</span>
+          </div>
+          <div class="actions">
+            ${['preparing','ready','delivered','cancelled'].filter(s => s !== o.status).map(s =>
+              `<button class="btn-sm btn-order-status btn-order-${s}" onclick="updateOrderStatus(${o.id}, '${s}')">${s}</button>`
+            ).join('')}
+          </div>
+        </div>
+      `).join('');
+      if (container.innerHTML !== newHTML) container.innerHTML = newHTML;
+    } else {
+      const main = document.getElementById('main-content');
+      if (main) main.innerHTML = ordersHTML(orders);
+    }
+  } catch (e) {}
+  finally { isRendering = false; }
+}
+
+async function showKOT(orderId) { try { var r = await authFetch("/api/kot/" + orderId); if (!r.ok) { showToast("KOT error", true); return; } var k = await r.json(); window._kc = k.content; showModal("<div style="font-family:monospace;font-size:12px;white-space:pre-wrap;background:#f9f9f9;padding:15px;border-radius:6px;color:#000;max-height:70vh;overflow:auto">" + k.content.replace(/\n/g, "<br>") + "</div><div class="modal-actions"><button onclick="closeModal()">Close</button><button onclick="printKOT()">Print</button></div>"); } catch (e) { showToast("KOT error", true); } }
+function printKOT() { if (!window._kc) return; var w = window.open("", "", "width=400,height=600"); w.document.write("<html><head><style>body{font:12px monospace;padding:10px;white-space:pre}</style></head><body>" + window._kc.replace(/\n/g, "<br>") + "</body></html>"); w.document.close(); w.print(); }
 
 async function updateOrderStatus(orderId, status) {
   try {
@@ -745,7 +842,7 @@ async function updateOrderStatus(orderId, status) {
     });
     if (!res.ok) throw new Error();
     showToast(`Order #${orderId} marked as ${status}`);
-    renderOrders();
+    refreshOrders();
   } catch (e) {
     showToast('Error updating order', true);
   }
@@ -978,62 +1075,68 @@ function processNameImage(file) {
       const data = imageData.data;
       const len = data.length;
       const gray = new Uint8Array(w * h);
-      let sum = 0;
       for (let i = 0; i < len; i += 4) {
-        const g = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
-        gray[i / 4] = g;
-        sum += g;
-      }
-      const avg = sum / gray.length;
-
-      // Determine if bg is light or dark
-      const bgLight = avg > 128;
-
-      // Otsu thresholding
-      let total = gray.length;
-      let hist = new Uint32Array(256);
-      for (let i = 0; i < total; i++) hist[gray[i]]++;
-      let otsuThreshold = 128;
-      let sumB = 0, wB = 0, wF = 0, maxVariance = 0;
-      let sumTotal = 0;
-      for (let t = 0; t < 256; t++) sumTotal += t * hist[t];
-      for (let t = 0; t < 256; t++) {
-        wB += hist[t];
-        if (wB === 0) continue;
-        wF = total - wB;
-        if (wF === 0) break;
-        sumB += t * hist[t];
-        let mB = sumB / wB;
-        let mF = (sumTotal - sumB) / wF;
-        let between = wB * wF * (mB - mF) * (mB - mF);
-        if (between > maxVariance) { maxVariance = between; otsuThreshold = t; }
+        gray[i / 4] = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
       }
 
-      // Apply threshold and create text-only image with transparent bg
+      // Compute integral image for fast local mean
+      const integral = new Float64Array((w + 1) * (h + 1));
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const idx = y * w + x;
+          integral[(y + 1) * (w + 1) + x + 1] = gray[idx]
+            + integral[y * (w + 1) + x + 1]
+            + integral[(y + 1) * (w + 1) + x]
+            - integral[y * (w + 1) + x];
+        }
+      }
+
+      function localMean(cx, cy, radius) {
+        const x0 = Math.max(0, cx - radius), x1 = Math.min(w - 1, cx + radius);
+        const y0 = Math.max(0, cy - radius), y1 = Math.min(h - 1, cy + radius);
+        const area = (x1 - x0 + 1) * (y1 - y0 + 1);
+        if (area < 1) return 128;
+        const sum = integral[(y1 + 1) * (w + 1) + x1 + 1]
+          - integral[y0 * (w + 1) + x1 + 1]
+          - integral[(y1 + 1) * (w + 1) + x0]
+          + integral[y0 * (w + 1) + x0];
+        return sum / area;
+      }
+
+      // Adaptive threshold with edge boost
       const outputData = ctx.createImageData(w, h);
       const out = outputData.data;
-      const threshold = otsuThreshold;
+      const radius = Math.max(4, Math.round(Math.min(w, h) * 0.04));
       let minX = w, maxX = 0, minY = h, maxY = 0;
       let textPixels = 0;
 
-      for (let i = 0; i < len; i += 4) {
-        const idx = i / 4;
-        const g = gray[idx];
-        const isText = bgLight ? (g < threshold) : (g > threshold);
-        if (isText) {
-          out[i] = data[i];
-          out[i + 1] = data[i + 1];
-          out[i + 2] = data[i + 2];
-          out[i + 3] = 255;
-          const x = idx % w;
-          const y = Math.floor(idx / w);
-          if (x < minX) minX = x;
-          if (x > maxX) maxX = x;
-          if (y < minY) minY = y;
-          if (y > maxY) maxY = y;
-          textPixels++;
-        } else {
-          out[i] = 0; out[i + 1] = 0; out[i + 2] = 0; out[i + 3] = 0;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const idx = y * w + x;
+          const i = idx * 4;
+          const g = gray[idx];
+          const mean = localMean(x, y, radius);
+          // Compute local contrast: absolute difference from local mean
+          const contrast = Math.abs(g - mean);
+          // Adaptive threshold: pixel is "text" if significantly darker/lighter than its surroundings
+          const offset = Math.max(10, mean * 0.15);
+          const isDark = g < mean - offset;
+          const isLight = g > mean + offset;
+          const isText = isDark || isLight;
+
+          if (isText && contrast > 8) {
+            out[i] = data[i];
+            out[i + 1] = data[i + 1];
+            out[i + 2] = data[i + 2];
+            out[i + 3] = 255;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+            textPixels++;
+          } else {
+            out[i] = 0; out[i + 1] = 0; out[i + 2] = 0; out[i + 3] = 0;
+          }
         }
       }
 
@@ -1042,8 +1145,34 @@ function processNameImage(file) {
         return;
       }
 
+      // Morphological cleanup: remove isolated pixels (simple 3x3 erosion)
+      const cleaned = new Uint8Array(out);
+      for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+          const idx = y * w + x;
+          if (out[idx * 4 + 3] === 0) continue;
+          let count = 0;
+          for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+              if (dy === 0 && dx === 0) continue;
+              if (out[(y + dy) * w + (x + dx)] * 4 + 3 > 0) count++;
+            }
+          }
+          if (count < 2) {
+            cleaned[idx * 4 + 3] = 0;
+          }
+        }
+      }
+
+      // Copy cleaned result back
+      for (let i = 0; i < len; i += 4) {
+        if (cleaned[i + 3] === 0) {
+          out[i] = 0; out[i + 1] = 0; out[i + 2] = 0; out[i + 3] = 0;
+        }
+      }
+
       // Crop to bounding box with padding
-      const pad = Math.max(4, Math.round(w * 0.02));
+      const pad = Math.max(8, Math.round(w * 0.03));
       const cropX = Math.max(0, minX - pad);
       const cropY = Math.max(0, minY - pad);
       const cropW = Math.min(w, maxX - minX + pad * 2);
